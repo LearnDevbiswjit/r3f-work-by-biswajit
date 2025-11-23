@@ -2,7 +2,7 @@
 import * as THREE from 'three'
 import React, { useRef, useMemo, Suspense, useEffect, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import {
+import { 
   ScrollControls,
   useScroll,
   Scroll,

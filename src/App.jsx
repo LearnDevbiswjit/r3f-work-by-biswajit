@@ -172,7 +172,7 @@ export default function App () {
         nativeCleanupRef.current = null
       }
     }
-
+ 
     // cleanup on unmount
     return () => {
       try {

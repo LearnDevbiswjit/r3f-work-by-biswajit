@@ -67,6 +67,7 @@
           labelEl.textContent = `${Math.round(progress)}`;
         }
 
+
         function loop(now){
           const dt = Math.min(0.1, (now - lastT) / 1000); // clamp dt
           lastT = now;
@@ -130,3 +131,4 @@
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
+  
