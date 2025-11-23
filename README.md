@@ -17,10 +17,10 @@ Compile the code for development and start a local server:
 npm start
 ```
 
-Create the build: Biswajit Halder
+Create the build: 
 
 ```
-yarn build
+npm build
 ```
 
 ## Credits

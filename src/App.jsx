@@ -4,6 +4,7 @@ import ScrollSection from './ScrollSection'
 import GsapOverlay from './component/GsapOverlay'
 import SimpleLoader from './SimpleLoader'
 
+
 let LocomotiveScroll = null
 try {
   // dynamic require so bundlers don't break if package missing

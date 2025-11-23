@@ -16,17 +16,15 @@
     "@react-three/drei": "^9.122.0",
     "@react-three/fiber": "8.15",
     "@reduxjs/toolkit": "^2.9.2",
-    "@studio-freight/lenis": "^1.0.42",
     "@theatre/core": "^0.7.2",
     "@theatre/r3f": "^0.7.2",
     "@theatre/studio": "^0.7.2",
     "babel-plugin-glsl": "^1.0.0",
     "git-all": "^0.0.3",
-    "gsap": "^3.13.0",
+    "gsap": "file:gsap-bonus.tgz",
     "lenis": "^1.3.13",
     "leva": "^0.10.0",
     "lil-gui": "^0.20.0",
-    "locomotive-scroll": "^4.1.4",
     "math-random": "^2.0.1",
     "random-esm": "^4.2.0",
     "react": "^18.2.0",
@@ -53,5 +51,5 @@
     "tailwindcss": "^3.3.3",
     "typescript": "^4.9.3",
     "vite": "^4.1.0"
-  } 
+  }
 }
