@@ -2,29 +2,20 @@
 import * as THREE from 'three'
 import React, { useRef, useMemo, Suspense, useEffect, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { 
-  ScrollControls,
-  useScroll,
-  Scroll,
-} from '@react-three/drei'
+import { ScrollControls, useScroll, Scroll } from '@react-three/drei'
 import PLYModel from './PLYModel.jsx'
 import JellyFishRipple from './JellyFishRipple.jsx'
 import { useControls, monitor, Leva } from 'leva'
 import { getProject, val } from '@theatre/core'
 import theatreeBBState from './theatreState.json'
-import {
-  editable as e,
-  SheetProvider,
-  PerspectiveCamera,
-} from '@theatre/r3f'
+import { editable as e, SheetProvider, PerspectiveCamera } from '@theatre/r3f'
 import Enveremnt from './Enveremnt.jsx'
 
+import studio from '@theatre/studio'
+import extension from '@theatre/r3f/dist/extension'
 
-// import studio from '@theatre/studio'
-// import extension from '@theatre/r3f/dist/extension'
-
-// studio.initialize()
-// studio.extend(extension)
+studio.initialize()
+studio.extend(extension)
 
 // -----------------------/component/------------
 import WaterScene from './component/WaterScene.jsx'
@@ -378,19 +369,22 @@ export default function ScrollSection () {
     })
 
   // Override window controls (user requested) — only START remains (end is determined by SpringPath end)
-  const { overrideStartSec, forceImmediateExitOnEnd } = useControls('Override Window', {
-    overrideStartSec: {
-      value: 45,
-      min: 0,
-      max: 3600,
-      step: 1,
-      label: 'Override START (s)'
-    },
-    forceImmediateExitOnEnd: {
-      value: true,
-      label: 'Force immediate EXIT when SpringPath ends'
+  const { overrideStartSec, forceImmediateExitOnEnd } = useControls(
+    'Override Window',
+    {
+      overrideStartSec: {
+        value: 45,
+        min: 0,
+        max: 3600,
+        step: 1,
+        label: 'Override START (s)'
+      },
+      forceImmediateExitOnEnd: {
+        value: true,
+        label: 'Force immediate EXIT when SpringPath ends'
+      }
     }
-  })
+  )
 
   // make these available to the Scene/bridge via global defaults
   useEffect(() => {
@@ -771,23 +765,34 @@ function Scene ({ sheet, guiFadeDefaults = {} }) {
 
     // ------------------ CLEANED: START crossing handling (only for forward/down) ------------------
     const prevSeq = prevSeqPosRef.current || 0
-    const crossedStart = prevSeq < AUTOSTART_SEC && seqPosSeconds >= AUTOSTART_SEC
+    const crossedStart =
+      prevSeq < AUTOSTART_SEC && seqPosSeconds >= AUTOSTART_SEC
 
     // Clean up lingering controller if user has scrolled back below START
     try {
       const ctrlCleanup = window._springFadeController || null
-      if (ctrlCleanup && ctrlCleanup.sessionId && seqPosSeconds < AUTOSTART_SEC) {
+      if (
+        ctrlCleanup &&
+        ctrlCleanup.sessionId &&
+        seqPosSeconds < AUTOSTART_SEC
+      ) {
         window._springFadeController = null
         window._springFadeDefaults = {
           ...(window._springFadeDefaults || {}),
           overrideStartSec: AUTOSTART_SEC
         }
-        if (forcedBlendRef && forcedBlendRef.current && forcedBlendRef.current.sessionId === ctrlCleanup.sessionId) {
+        if (
+          forcedBlendRef &&
+          forcedBlendRef.current &&
+          forcedBlendRef.current.sessionId === ctrlCleanup.sessionId
+        ) {
           forcedBlendRef.current.active = false
         }
         lastTriggeredDirRef.current = null
       }
-    } catch (e) { /* ignore */ }
+    } catch (e) {
+      /* ignore */
+    }
 
     // Only trigger a START-enter when crossing happens AND the scroll direction is FORWARD/DOWN.
     // Do NOT trigger any fade on reverse/up scroll (user requested).
@@ -837,8 +842,13 @@ function Scene ({ sheet, guiFadeDefaults = {} }) {
               .getPointAt(brickT)
               .clone()
               .multiplyScalar(pathScale)
-            const radial = new THREE.Vector3(localPoint.x, 0, localPoint.z).normalize()
-            if (!isFinite(radial.x) || radial.lengthSq() < 1e-6) radial.set(1, 0, 0)
+            const radial = new THREE.Vector3(
+              localPoint.x,
+              0,
+              localPoint.z
+            ).normalize()
+            if (!isFinite(radial.x) || radial.lengthSq() < 1e-6)
+              radial.set(1, 0, 0)
             const outwardDist = (brickSpec.depth / 2 + radialOffset) * pathScale
             const outward = radial.clone().multiplyScalar(outwardDist)
             const brickLocalPos = new THREE.Vector3(
@@ -857,18 +867,27 @@ function Scene ({ sheet, guiFadeDefaults = {} }) {
             const yOrtho = new THREE.Vector3()
               .crossVectors(zAxis_brick, xAxis_brick)
               .normalize()
-            const groupQuat = new THREE.Quaternion().setFromRotationMatrix(groupMat)
+            const groupQuat = new THREE.Quaternion().setFromRotationMatrix(
+              groupMat
+            )
             const camZ = zAxis_brick
               .clone()
               .multiplyScalar(-1)
               .applyQuaternion(groupQuat)
               .normalize()
             const camY = yOrtho.clone().applyQuaternion(groupQuat).normalize()
-            const camX = new THREE.Vector3().crossVectors(camY, camZ).normalize()
+            const camX = new THREE.Vector3()
+              .crossVectors(camY, camZ)
+              .normalize()
             const camBasisMat = new THREE.Matrix4().makeBasis(camX, camY, camZ)
-            const camQuatFromBasis = new THREE.Quaternion().setFromRotationMatrix(camBasisMat)
-            const camEuler = new THREE.Euler().setFromQuaternion(camQuatFromBasis, 'YXZ')
-            if (mode === 'oppositeSide' || mode === 'oppositeSideMove') camEuler.y += Math.PI
+            const camQuatFromBasis =
+              new THREE.Quaternion().setFromRotationMatrix(camBasisMat)
+            const camEuler = new THREE.Euler().setFromQuaternion(
+              camQuatFromBasis,
+              'YXZ'
+            )
+            if (mode === 'oppositeSide' || mode === 'oppositeSideMove')
+              camEuler.y += Math.PI
             camEuler.y += THREE.MathUtils.degToRad(yOffsetDeg)
             camEuler.x += THREE.MathUtils.degToRad(xOffsetDeg || 0)
             camEuler.z += THREE.MathUtils.degToRad(zOffsetDeg || 0)
@@ -878,8 +897,10 @@ function Scene ({ sheet, guiFadeDefaults = {} }) {
               forcedBlendRef.current.active = true
               forcedBlendRef.current.startTime = performance.now()
               forcedBlendRef.current.duration = forcedBlendMsVal
-              forcedBlendRef.current.fromPos = cameraRef.current.position.clone()
-              forcedBlendRef.current.fromQuat = cameraRef.current.quaternion.clone()
+              forcedBlendRef.current.fromPos =
+                cameraRef.current.position.clone()
+              forcedBlendRef.current.fromQuat =
+                cameraRef.current.quaternion.clone()
               forcedBlendRef.current.toPos = worldPos.clone()
               forcedBlendRef.current.toQuat = finalQuat.clone()
               forcedBlendRef.current.sessionId = sessionId
@@ -890,11 +911,17 @@ function Scene ({ sheet, guiFadeDefaults = {} }) {
           }
 
           // soft pause
-          softPauseRef.current = { active: true, start: performance.now(), duration: 1000 }
+          softPauseRef.current = {
+            active: true,
+            start: performance.now(),
+            duration: 1000
+          }
 
           // ensure camera used next frame
           requestAnimationFrame(() => {
-            try { set({ camera: cameraRef.current }) } catch (e) {}
+            try {
+              set({ camera: cameraRef.current })
+            } catch (e) {}
           })
 
           // Build controller object: ONLY ENTER for down direction.
@@ -912,7 +939,9 @@ function Scene ({ sheet, guiFadeDefaults = {} }) {
           }
 
           const enterAllowed =
-            (guiFadeDefaults.downEnterEnabled ?? window._springFadeDefaults?.downEnterEnabled ?? true)
+            guiFadeDefaults.downEnterEnabled ??
+            window._springFadeDefaults?.downEnterEnabled ??
+            true
           if (enterAllowed) {
             controller.enter = true
           }
@@ -1203,9 +1232,13 @@ function Scene ({ sheet, guiFadeDefaults = {} }) {
           const sessionDir = fb.sessionDir || ctrl.sessionDir || 'down'
           const exitAllowed =
             (sessionDir === 'down' &&
-              (guiFadeDefaults.downExitEnabled ?? window._springFadeDefaults?.downExitEnabled ?? true)) ||
+              (guiFadeDefaults.downExitEnabled ??
+                window._springFadeDefaults?.downExitEnabled ??
+                true)) ||
             (sessionDir === 'up' &&
-              (guiFadeDefaults.upExitEnabled ?? window._springFadeDefaults?.upEnterEnabled ?? true))
+              (guiFadeDefaults.upExitEnabled ??
+                window._springFadeDefaults?.upEnterEnabled ??
+                true))
 
           if (exitAllowed) {
             if (!ctrl.exit && !ctrl.exited) {
@@ -1286,9 +1319,13 @@ function Scene ({ sheet, guiFadeDefaults = {} }) {
                 ctrl.sessionDir || forcedBlendRef.current.sessionDir || 'down'
               const exitAllowed =
                 (sessionDir === 'down' &&
-                  (guiFadeDefaults.downExitEnabled ?? window._springFadeDefaults?.downExitEnabled ?? true)) ||
+                  (guiFadeDefaults.downExitEnabled ??
+                    window._springFadeDefaults?.downExitEnabled ??
+                    true)) ||
                 (sessionDir === 'up' &&
-                  (guiFadeDefaults.upEnterEnabled ?? window._springFadeDefaults?.upEnterEnabled ?? true))
+                  (guiFadeDefaults.upEnterEnabled ??
+                    window._springFadeDefaults?.upEnterEnabled ??
+                    true))
 
               if (exitAllowed) {
                 ctrl.exit = true
@@ -1340,20 +1377,23 @@ function Scene ({ sheet, guiFadeDefaults = {} }) {
           //  - try theatreCamRef.current
           //  - fallback to global window._springTheatreCam.current
           //  - try multiple animation frames with small delay until successful (max tries)
-          (function tryRestoreTheatreCamera (attempt = 0) {
+          ;(function tryRestoreTheatreCamera (attempt = 0) {
             try {
               // clear suppression so theatre can resume control
               window._springSuppressTheatreResume = false
 
               const theatreCamCandidates = [
                 theatreCamRef && theatreCamRef.current,
-                window._springTheatreCam && window._springTheatreCam.current,
+                window._springTheatreCam && window._springTheatreCam.current
               ]
 
               // pick first non-null candidate that looks like a camera
               let theatreCam = null
               for (let c of theatreCamCandidates) {
-                if (c && (c.isCamera || c.isPerspectiveCamera || c.isObject3D)) {
+                if (
+                  c &&
+                  (c.isCamera || c.isPerspectiveCamera || c.isObject3D)
+                ) {
                   theatreCam = c
                   break
                 }
@@ -1361,7 +1401,10 @@ function Scene ({ sheet, guiFadeDefaults = {} }) {
 
               if (theatreCam) {
                 // ensure camera has projection updated (if possible)
-                try { theatreCam.updateProjectionMatrix && theatreCam.updateProjectionMatrix() } catch (e) {}
+                try {
+                  theatreCam.updateProjectionMatrix &&
+                    theatreCam.updateProjectionMatrix()
+                } catch (e) {}
 
                 // set three renderer's active camera
                 try {
@@ -1374,18 +1417,27 @@ function Scene ({ sheet, guiFadeDefaults = {} }) {
                 }
 
                 // try to resume theatre timeline (safe)
-                try { if (sheet && sheet.sequence) sheet.sequence.play(); } catch (e) {}
+                try {
+                  if (sheet && sheet.sequence) sheet.sequence.play()
+                } catch (e) {}
               } else {
                 // if no candidate yet and attempts left -> retry next RAF
                 if (attempt < 4) {
-                  requestAnimationFrame(() => tryRestoreTheatreCamera(attempt + 1))
+                  requestAnimationFrame(() =>
+                    tryRestoreTheatreCamera(attempt + 1)
+                  )
                 } else {
                   // final fallback: resume theatre timeline even if camera not found
-                  try { if (sheet && sheet.sequence) sheet.sequence.play(); } catch (e) {}
+                  try {
+                    if (sheet && sheet.sequence) sheet.sequence.play()
+                  } catch (e) {}
                 }
               }
             } catch (e) {
-              if (attempt < 4) requestAnimationFrame(() => tryRestoreTheatreCamera(attempt + 1))
+              if (attempt < 4)
+                requestAnimationFrame(() =>
+                  tryRestoreTheatreCamera(attempt + 1)
+                )
             }
           })(0)
         }
@@ -1398,9 +1450,12 @@ function Scene ({ sheet, guiFadeDefaults = {} }) {
     const sequencePtr = sheet && sheet.sequence && sheet.sequence.pointer
     let seqTime = 0
     try {
-      if (sequencePtr && typeof sequencePtr.time === 'number') seqTime = sequencePtr.time
+      if (sequencePtr && typeof sequencePtr.time === 'number')
+        seqTime = sequencePtr.time
       else seqTime = Number(sheet.sequence.position || 0)
-    } catch (e) { seqTime = Number(sheet.sequence.position || 0) }
+    } catch (e) {
+      seqTime = Number(sheet.sequence.position || 0)
+    }
 
     const AUTOSTART_SEC =
       typeof guiFadeDefaults.overrideStartSec === 'number'
@@ -1436,7 +1491,9 @@ function Scene ({ sheet, guiFadeDefaults = {} }) {
             cameraRef.current = inst
             theatreCamRef.current = inst
             // also keep a global handle for debugging/restore
-            window._springTheatreCam = window._springTheatreCam || { current: inst }
+            window._springTheatreCam = window._springTheatreCam || {
+              current: inst
+            }
             window._springTheatreCam.current = inst
           }}
           theatreKey='Camera'
@@ -1500,22 +1557,12 @@ function Scene ({ sheet, guiFadeDefaults = {} }) {
           <RockStone scale={30} />
         </e.group>
 
-  
-
-       <Suspense fallback={null}>
-    <e.group theatreKey='JellyFish' position={[0, 0, -1]}>
-  <JellyFishRipple
-    url="/models/JellyFish.ply"
-    scale={50}
-  />
-</e.group>
-  </Suspense>
-
-
+        {/* <Suspense fallback={null}>
+          <e.group theatreKey='JellyFish' position={[0, 0, -1]}>
+            <JellyFishRipple url='/models/JellyFish.ply' scale={50} />
+          </e.group>
+        </Suspense> */}
       </group>
-
-      
-
 
       <Suspense fallback={null}>
         <Enveremnt />
