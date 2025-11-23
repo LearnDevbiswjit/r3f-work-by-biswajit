@@ -1,6 +1,6 @@
 # React Three Fiber Project by Biswajit Halder
 
-Display a 3D scene, and fly a camera through it as the user scrolls, using Theatre.js and React Three Fiber, in 50 lines of code.
+Display a 3D scene, and fly a camera through it as the user scrolls, using Theatre.js and React Three Fiber.
 
  
 ## Installation
@@ -8,16 +8,16 @@ Display a 3D scene, and fly a camera through it as the user scrolls, using Theat
 Install dependencies:
 
 ```
-yarn
+npm
 ```
 
 Compile the code for development and start a local server:
 
 ```
-yarn dev
+npm start
 ```
 
-Create the build:
+Create the build: Biswajit Halder
 
 ```
 yarn build
@@ -25,8 +25,8 @@ yarn build
 
 ## Credits
  
+
 ## Misc
  
 ## License
- # organimo-v3
-# organimo-v3
+ 
