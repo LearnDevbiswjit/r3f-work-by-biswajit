@@ -26,4 +26,5 @@ gsap-bonus.tgz
 gsap-bonus.tgz
 
 # IGNORE component folder
-src/component---/
+src/componentOld
+upperWater
