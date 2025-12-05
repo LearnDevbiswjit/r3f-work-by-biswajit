@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Provider } from 'react-redux';
 import { Canvas } from '@react-three/fiber';
-import { SheetProvider } from '@theatre/r3f';
+import { SheetProvider } from '@theatre/r3f'; 
 import { getProject } from '@theatre/core';
 import { Leva } from 'leva';
 // If you need explicit Leva CSS (only if your global CSS hides it), uncomment:

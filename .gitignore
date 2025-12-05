@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 gsap-bonus.tgz
 gsap-bonus.tgz
+
+# IGNORE component folder
+src/component---/
