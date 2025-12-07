@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { setOverallProgress } from '../store/slices/timelineSlice';
+import { setOverallProgress } from '../store/slices/timelineSlice'; 
 
 /*
   Changes:
