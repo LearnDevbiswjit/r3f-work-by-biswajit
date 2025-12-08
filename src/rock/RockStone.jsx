@@ -44,7 +44,7 @@ export default function RockStone(props) {
     pivotRef.current.worldToLocal(centerInPivot)
 
     // Shift the model so that pivot origin == model center
-    modelRef.current.position.sub(centerInPivot)
+    modelRef.current.position.sub(centerInPivot) 
   }, [])
 
   return (

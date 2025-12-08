@@ -24,7 +24,7 @@ const rockTex = useTexture('../textures/rock-texture.jpg')
         receiveShadow
         geometry={nodes.mountain.geometry}
           material={rockMaterial}
-      />
+      /> 
     </group>
   )
 }

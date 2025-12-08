@@ -28,6 +28,8 @@ import CloudFloatingNew from './component/CloudFloatingNew'
 import TextBoxUnderWater from './component/underwater/TextBoxUnderWater'
 import CloudeGradiantShader from './component/CloudeGradiantShader'
 import { UnderWaterMountainSideBig } from './component/underwater/UnderWaterMountainSideBig'
+ 
+import { HeroRock } from './rock/HeroRock'
 
 export default function Enveremnt () {
   return (
@@ -260,6 +262,10 @@ export default function Enveremnt () {
         <Product scale={30} />
       </e.group>
 
+ <e.group theatreKey='RockStone'>
+    <HeroRock/>
+      </e.group>
+
       <e.group theatreKey='TextBoxUnderWater-1' position={[0, 0, 1]}>
         <TextBoxUnderWater
           startAt={140} // এই কম্পোনেন্ট 30s এ শুরু করবে
@@ -317,6 +323,9 @@ export default function Enveremnt () {
       <e.group theatreKey='UnderWaterMountainSide-Big' position={[0, 0, 1]}>
         <UnderWaterMountainSideBig scale={20} />
       </e.group>
+
+
+
     </group>
   )
 }
