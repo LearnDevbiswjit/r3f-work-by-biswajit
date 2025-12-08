@@ -355,8 +355,8 @@ export default function CameraRig({
         <Briks
           points={bricksPtsRef.current}
           pathScale={briksScale}
-          brickSpacing={200}
-          brickScale={1.2}
+          brickSpacing={10}
+          brickScale={0.9}
           pathColor={'#ff7a66'}
         />
       )}
