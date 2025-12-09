@@ -28,7 +28,7 @@ import CloudFloatingNew from './component/CloudFloatingNew'
 import TextBoxUnderWater from './component/underwater/TextBoxUnderWater'
 import CloudeGradiantShader from './component/CloudeGradiantShader'
 import { UnderWaterMountainSideBig } from './component/underwater/UnderWaterMountainSideBig'
- 
+ import RockStone from './rock/RockStone.jsx'
 import { HeroRock } from './rock/HeroRock'
 
 export default function Enveremnt () {
@@ -106,7 +106,9 @@ export default function Enveremnt () {
 
 
 
-
+<e.group theatreKey='RockStone' position={[0, 0, -1]}>
+          <RockStone scale={30} />
+        </e.group>
 
 
 

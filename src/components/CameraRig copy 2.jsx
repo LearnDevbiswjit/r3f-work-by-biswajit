@@ -79,7 +79,13 @@ export default function CameraRig({
     showLine, lineColor, lineRadius,
     showBriks, briksScale,
     initialYawDeg,
-    startFlip
+    startFlip,
+    // briks tuning exposed here for convenience
+    briksCount,
+    briksTreadWidth,
+    briksActiveRadius,
+    briksDownAmp,
+    briksRiseSmoothing
   } = useControls('Camera (Helix)', {
     camOffsetX: { value: -2, min: -200, max: 200, step: 0.1, label: 'offset X (right)' },
     camOffsetY: { value: 3, min: -200, max: 200, step: 0.1, label: 'offset Y (up)' },
@@ -95,14 +101,21 @@ export default function CameraRig({
     showBriks: { value: true },
     briksScale: { value: 1, min: 0.01, max: 6, step: 0.01 },
     initialYawDeg: { value: 90, min: -180, max: 180, step: 1, label: 'initial yaw (deg)' },
-    startFlip: { value: false, label: 'start flipped 180°' }
+    startFlip: { value: false, label: 'start flipped 180°' },
+
+    // --- small Briks panel (defaults chosen to match earlier conversation) ---
+    briksCount: { value: 200, min: 1, max: 2000, step: 1, label: 'briks count' },
+    briksTreadWidth: { value: 2.6, min: 0.1, max: 10, step: 0.01, label: 'tread width' },
+    briksActiveRadius: { value: 4, min: 0, max: 200, step: 1, label: 'active radius (indices)' },
+    briksDownAmp: { value: 2.5, min: 0, max: 20, step: 0.01, label: 'down amplitude' },
+    briksRiseSmoothing: { value: 0.12, min: 0.001, max: 1, step: 0.001, label: 'rise smoothing' }
   });
 
   // refs/state
   const curveRef = useRef(null);
   const lutRef = useRef(null);
-  const ptsRef = useRef([]);
-  const bricksPtsRef = useRef([]);
+  const ptsRef = useRef([]);           // dense helix points (makeHelixPoints)
+  const bricksPtsRef = useRef([]);     // copy for passing to Briks
   const desired = useRef(new THREE.Vector3());
   const tmp = useRef(new THREE.Vector3());
   const prevMode = useRef(camState.mode);
@@ -183,6 +196,22 @@ export default function CameraRig({
     if (overall <= tA) return 0;
     if (overall >= tA + tH) return 1;
     return Math.max(0, Math.min(1, (overall - tA) / tH));
+  }
+
+  // helper: compute nearest index on ptsRef to given world position
+  function findNearestIndexOnPts(worldPos) {
+    const pts = ptsRef.current;
+    if (!pts || pts.length === 0) return 0;
+    let bestI = 0;
+    let bestD = Infinity;
+    for (let i = 0; i < pts.length; i += 1) {
+      const d2 = worldPos.distanceToSquared(pts[i]);
+      if (d2 < bestD) {
+        bestD = d2;
+        bestI = i;
+      }
+    }
+    return bestI; // integer index into ptsRef
   }
 
   // FRAME LOOP
@@ -345,6 +374,21 @@ export default function CameraRig({
     }
   });
 
+  // compute activeIndex each render (nearest helix point to camera)
+  let activeIndexForBriks = 0;
+  try {
+    if (camera && ptsRef.current && ptsRef.current.length > 0) {
+      // world camera pos
+      const camPos = new THREE.Vector3().setFromMatrixPosition(camera.matrixWorld);
+      activeIndexForBriks = findNearestIndexOnPts(camPos);
+      // clamp within pts length
+      if (activeIndexForBriks < 0) activeIndexForBriks = 0;
+      if (activeIndexForBriks >= ptsRef.current.length) activeIndexForBriks = ptsRef.current.length - 1;
+    }
+  } catch (e) {
+    activeIndexForBriks = 0;
+  }
+
   return (
     <>
       {showLine && curveRef.current && ptsRef.current && ptsRef.current.length > 0 && (
@@ -354,10 +398,15 @@ export default function CameraRig({
       {showBriks && bricksPtsRef.current && bricksPtsRef.current.length > 0 && (
         <Briks
           points={bricksPtsRef.current}
-          pathScale={briksScale}
-          brickSpacing={200}
-          brickScale={1.2}
+          count={Number(briksCount) || 200}
+          pathScale={Number(briksScale) || 1}
+          treadWidth={Number(briksTreadWidth) || 2.6}
+          brickScale={1.0}
           pathColor={'#ff7a66'}
+          activeIndex={activeIndexForBriks}
+          activeRadius={Number(briksActiveRadius) || 4}
+          downAmplitude={Number(briksDownAmp) || 2.5}
+          riseSmoothing={Number(briksRiseSmoothing) || 0.12}
         />
       )}
     </>

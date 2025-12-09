@@ -1,200 +1,396 @@
 // src/App.jsx
-import React, { useRef, useEffect } from 'react'
-import ScrollSection from './ScrollSection'
-import GsapOverlay from './component/GsapOverlay'
-import SimpleLoader from './SimpleLoader'
+import React, { useEffect, useState, Suspense } from 'react';
+import { Provider } from 'react-redux';
+import { Canvas } from '@react-three/fiber';
+import { SheetProvider } from '@theatre/r3f';
+import { getProject } from '@theatre/core';
+import { Leva } from 'leva';
 
+import Enveremnt from './Enveremnt.jsx';
+import theatreStateBundled from './assets/theatreState.json'; // ensure exists
+import { store } from './store/store';
+import { RegistryProvider, useRegistry } from './registry/TimelineRegistryContext';
+import CameraRig from './components/CameraRig';
+import CameraSwitcher from './components/CameraSwitcher';
+import ScrollMapper from './components/ScrollMapper';
+import DebugScrubber from './components/DebugScrubber';
+import WaterScene from './components/WaterScene';
 
-let LocomotiveScroll = null
-try {
-  // dynamic require so bundlers don't break if package missing
-  // install with: npm i locomotive-scroll
-  // some bundlers may need import; dynamic require works in many setups
-  // eslint-disable-next-line global-require
-  LocomotiveScroll = require('locomotive-scroll').default
-} catch (e) {
-  LocomotiveScroll = null
+import StudioManager from './StudioManager';
+import { registerSimulatedTheatre } from './theatre/bootstrapRegisterSimulated';
+import { registerSheetTimelines } from './theatre/autoRegisterSheet';
+
+import * as THREE from 'three';
+
+// ensure theatre project/sheet
+let initialProject = null;
+let initialSheet = null;
+if (typeof window !== 'undefined') {
+  try {
+    const stateToLoad = window.__THEATRE_REMOTE_STATE__ || theatreStateBundled || null;
+    if (stateToLoad) initialProject = getProject('myProject', { state: stateToLoad });
+    else initialProject = getProject('myProject');
+    initialSheet = initialProject.sheet('Scene');
+    window.__THEATRE_PROJECT__ = window.__THEATRE_PROJECT__ || initialProject;
+    window.__THEATRE_SHEET__ = window.__THEATRE_SHEET__ || initialSheet;
+    console.info('[App] initial Theatre project+sheet ensured (state injected?)');
+  } catch (e) {
+    console.warn('[App] could not create initial Theatre project/sheet:', e?.message || e);
+  }
 }
 
-export default function App () {
-  const COUNT = 4
-  const triggersRef = useRef(Array.from({ length: COUNT }).map(() => React.createRef()))
-  const locoRef = useRef(null)
-  const rafPubRef = useRef(null)
-  const nativeCleanupRef = useRef(null)
+// Sheet binder
+function SheetBinder({ children }) {
+  const [sheet, setSheet] = useState(() => (typeof window !== 'undefined' ? window.__THEATRE_SHEET__ || null : null));
 
   useEffect(() => {
-    // safety: avoid SSR noise
-    if (typeof window === 'undefined') return
-
-    // ensure consistent globals (consumers expect these)
-    window._springScrollOffset = typeof window._springScrollOffset === 'number' ? window._springScrollOffset : 0
-    window._springScrollY = typeof window._springScrollY === 'number' ? window._springScrollY : 0
-    window._springScrollVelocity = typeof window._springScrollVelocity === 'number' ? window._springScrollVelocity : 0
-    window._springScrollVelocitySmoothed = typeof window._springScrollVelocitySmoothed === 'number' ? window._springScrollVelocitySmoothed : 0
-
-    // small local publisher state
-    let smoothVal = window._springScrollVelocitySmoothed || 0
-    const ALPHA = 0.12 // smoothing (tune 0.02..0.18: smaller => smoother)
-    const MAX_VEL = 6.0
-
-    function publishSigned (signed) {
-      const clamped = Math.max(-MAX_VEL, Math.min(MAX_VEL, signed || 0))
-      window._springScrollVelocity = clamped
-      const mag = Math.abs(clamped)
-      smoothVal = smoothVal * (1 - ALPHA) + mag * ALPHA
-      window._springScrollVelocitySmoothed = smoothVal
-    }
-
-    // COMMON RAF publisher to keep smoothed value decaying/publishing steadily
-    function startPublisherRAF () {
-      if (rafPubRef.current) return
-      function loop () {
-        try {
-          // re-publish last known to let consumers decay/smooth
-          publishSigned(window._springScrollVelocity || 0)
-        } catch (e) {}
-        rafPubRef.current = requestAnimationFrame(loop)
-      }
-      rafPubRef.current = requestAnimationFrame(loop)
-    }
-
-    // CLEANUP helper
-    function stopPublisherRAF () {
-      if (rafPubRef.current) cancelAnimationFrame(rafPubRef.current)
-      rafPubRef.current = null
-    }
-
-    // 1) If locomotive available, init and hook events
-    if (LocomotiveScroll) {
-      try {
-        const container = document.querySelector('[data-scroll-container]') || document.body
-        const loco = new LocomotiveScroll({
-          el: container,
-          smooth: true,
-          lerp: 0.08, // tune: smaller = tighter mapping, larger = smoother but more lag
-          smartphone: { smooth: true },
-          tablet: { smooth: true }
-        })
-        locoRef.current = loco
-
-        // locomotive fires 'scroll' events; we try to read best available velocity
-        loco.on('scroll', (obj) => {
-          try {
-            // some versions expose obj.velocity (signed), some expose delta
-            let sample = 0
-            if (obj && typeof obj.velocity === 'number') sample = obj.velocity
-            else if (obj && typeof obj.deltaY === 'number') sample = obj.deltaY
-            else if (loco && loco.scroll && loco.scroll.instance && typeof loco.scroll.instance.delta === 'number') sample = loco.scroll.instance.delta
-            publishSigned(sample)
-          } catch (e) {}
-        })
-
-        // also start a gentle RAF publisher to provide consistent normalized offset & y
-        startPublisherRAF()
-        // compute offset periodically (some loco versions expose limit/scroll)
-        function refreshOffset () {
-          try {
-            const inst = loco && loco.scroll && loco.scroll.instance ? loco.scroll.instance : null
-            const scrollY = (typeof inst?.scroll === 'number') ? inst.scroll : (typeof loco.scroll === 'number' ? loco.scroll : window.scrollY || 0)
-            // determine limit/height
-            const limit = typeof loco.limit === 'function' ? Math.max(1, loco.limit()) : Math.max(1, document.documentElement.scrollHeight - window.innerHeight)
-            const offset = limit > 0 ? Math.max(0, Math.min(1, scrollY / limit)) : 0
-            window._springScrollOffset = offset
-            window._springScrollY = scrollY
-          } catch (e) {}
-          // keep updating occasionally
-          requestAnimationFrame(refreshOffset)
-        }
-        requestAnimationFrame(refreshOffset)
-      } catch (e) {
-        // if locomotive init fails, fall back to native below
-        // eslint-disable-next-line no-console
-        console.warn('[App] locomotive init failed, falling back to native scroller', e)
-        initNativeScroller()
-      }
-    } else {
-      // Locomotive not present — use native wheel/scroll handlers
-      initNativeScroller()
-    }
-
-    // native fallback implementation
-    function initNativeScroller () {
-      if (nativeCleanupRef.current) return
-      let lastY = window.scrollY || document.documentElement.scrollTop || 0
-      let lastT = performance.now()
-      startPublisherRAF()
-
-      function onWheel (ev) {
-        // wheel deltaY is signed; scale down to reasonable range
-        const signed = ev.deltaY || (ev.wheelDelta ? -ev.wheelDelta : 0)
-        publishSigned(signed * 0.02) // tweak scale if needed
-      }
-      function onScroll () {
-        const now = performance.now()
-        const y = window.scrollY || document.documentElement.scrollTop || 0
-        const dt = Math.max(1, now - lastT)
-        const dy = y - lastY
-        lastY = y
-        lastT = now
-        // normalized-ish per-frame velocity approximation
-        const v = dy / dt * 16
-        publishSigned(v)
-        // also update offset/y
-        const limit = Math.max(1, document.documentElement.scrollHeight - window.innerHeight)
-        window._springScrollOffset = limit > 0 ? Math.max(0, Math.min(1, y / limit)) : 0
-        window._springScrollY = y
-      }
-
-      function onTouchStart (e) {
-        // nothing special; handled in touchmove
-      }
-      let lastTouchY = null
-      function onTouchMove (e) {
-        const ty = e.touches && e.touches[0] ? e.touches[0].clientY : null
-        if (ty == null) return
-        if (lastTouchY == null) lastTouchY = ty
-        const dy = lastTouchY - ty
-        lastTouchY = ty
-        publishSigned(dy * 0.6)
-      }
-
-      window.addEventListener('wheel', onWheel, { passive: true })
-      window.addEventListener('scroll', onScroll, { passive: true })
-      window.addEventListener('touchstart', onTouchStart, { passive: true })
-      window.addEventListener('touchmove', onTouchMove, { passive: true })
-
-      nativeCleanupRef.current = () => {
-        window.removeEventListener('wheel', onWheel)
-        window.removeEventListener('scroll', onScroll)
-        window.removeEventListener('touchstart', onTouchStart)
-        window.removeEventListener('touchmove', onTouchMove)
-        stopPublisherRAF()
-        nativeCleanupRef.current = null
+    let mounted = true;
+    function sync() {
+      if (!mounted) return;
+      if (typeof window !== 'undefined' && window.__THEATRE_SHEET__ && window.__THEATRE_SHEET__ !== sheet) {
+        setSheet(window.__THEATRE_SHEET__);
       }
     }
- 
-    // cleanup on unmount
+    const id = setInterval(sync, 200);
+    sync();
     return () => {
-      try {
-        if (locoRef.current && typeof locoRef.current.destroy === 'function') locoRef.current.destroy()
-      } catch (e) {}
-      if (nativeCleanupRef.current) nativeCleanupRef.current()
-      if (rafPubRef.current) cancelAnimationFrame(rafPubRef.current)
-      // optionally keep globals but you can clear if you prefer:
-      // delete window._springScrollVelocity; delete window._springScrollVelocitySmoothed;
+      mounted = false;
+      clearInterval(id);
+    };
+  }, [sheet]);
+
+  const providerSheet = sheet || (typeof window !== 'undefined' ? window.__THEATRE_SHEET__ || initialSheet : initialSheet);
+  if (!providerSheet) return children;
+  return <SheetProvider sheet={providerSheet}>{children}</SheetProvider>;
+}
+
+// extractor helper (kept)
+function extractCameraFromState(state) {
+  if (!state || typeof state !== 'object') return null;
+  if (state.camera && state.camera.position && state.camera.quaternion) return { pos: state.camera.position, quat: state.camera.quaternion };
+  if (state.timeline && state.timeline.camera && state.timeline.camera.position && state.timeline.camera.quaternion) return { pos: state.timeline.camera.position, quat: state.timeline.camera.quaternion };
+
+  try {
+    const sb = state.sheetsById;
+    if (sb && typeof sb === 'object') {
+      for (const sid in sb) {
+        if (!Object.prototype.hasOwnProperty.call(sb, sid)) continue;
+        const sheet = sb[sid];
+        if (!sheet) continue;
+        const so = sheet.staticOverrides || sheet.static || sheet.staticValues || null;
+        if (so && so.byObject && so.byObject.Camera) {
+          const camObj = so.byObject.Camera;
+          if (camObj.transform && camObj.transform.position && camObj.transform.quaternion) {
+            return { pos: camObj.transform.position, quat: camObj.transform.quaternion };
+          }
+          if (camObj.position && camObj.quaternion) {
+            return { pos: camObj.position, quat: camObj.quaternion };
+          }
+          if (camObj.transform && camObj.transform.position && camObj.transform.target) {
+            try {
+              const p = new THREE.Vector3(camObj.transform.position.x, camObj.transform.position.y, camObj.transform.position.z);
+              const t = new THREE.Vector3(camObj.transform.target.x, camObj.transform.target.y, camObj.transform.target.z);
+              const m = new THREE.Matrix4(); m.lookAt(p, t, new THREE.Vector3(0,1,0));
+              const q = new THREE.Quaternion().setFromRotationMatrix(m);
+              return { pos: camObj.transform.position, quat: { x: q.x, y: q.y, z: q.z, w: q.w } };
+            } catch (e) { /* ignore */ }
+          }
+        }
+      }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  } catch (e) {
+    console.warn('[extractCameraFromState] parse error', e?.message || e);
+  }
+
+  try {
+    const walker = (o) => {
+      if (!o || typeof o !== 'object') return null;
+      if (o.position && o.quaternion) return { pos: o.position, quat: o.quaternion };
+      for (const k in o) {
+        if (!Object.prototype.hasOwnProperty.call(o, k)) continue;
+        const r = walker(o[k]);
+        if (r) return r;
+      }
+      return null;
+    };
+    return walker(state);
+  } catch (e) { /* ignore */ }
+
+  return null;
+}
+
+// Timeline bootstrap
+function TimelineBootstrap() {
+  const registry = useRegistry();
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function tryRegister() {
+      if (cancelled) return;
+      const sheet = typeof window !== 'undefined' ? window.__THEATRE_SHEET__ : null;
+
+      let remoteState = null;
+      try {
+        const res = await fetch('/theatreState.json', { cache: 'no-cache' });
+        if (res.ok) {
+          remoteState = await res.json();
+          console.info('[TimelineBootstrap] fetched /theatreState.json');
+        } else {
+          console.info('[TimelineBootstrap] /theatreState.json not served (status)', res.status);
+        }
+      } catch (err) {}
+
+      if (!remoteState) remoteState = window.__THEATRE_REMOTE_STATE__ || theatreStateBundled || null;
+
+      if (remoteState) {
+        const cam = extractCameraFromState(remoteState);
+        if (cam) {
+          window.__THEATRE_REMOTE_STATE__ = remoteState;
+          window.__THEATRE_STATIC_CAMERA__ = cam;
+          window.__THEATRE_B_START_CAMERA__ = window.__THEATRE_B_START_CAMERA__ || cam;
+          if (remoteState.durations) window.__THEATRE_REMOTE_DURATIONS__ = remoteState.durations;
+          if (remoteState.timeline && remoteState.timeline.durations) window.__THEATRE_REMOTE_DURATIONS__ = remoteState.timeline.durations;
+        } else {
+          window.__THEATRE_REMOTE_STATE__ = remoteState;
+        }
+      }
+
+      const st = store.getState();
+      const durationsFromStore = (st && st.timeline && st.timeline.durations) ? st.timeline.durations : null;
+      const finalDur = durationsFromStore || (remoteState && (remoteState.durations || (remoteState.timeline && remoteState.timeline.durations))) || { theatreA: 20*60, helix: 20*60, theatreB: 30*60 };
+
+      if (sheet) {
+        registerSheetTimelines(registry, sheet, finalDur);
+      } else if (remoteState) {
+        registerSimulatedTheatre(registry, remoteState);
+      } else {
+        registerSimulatedTheatre(registry, { durations: finalDur });
+      }
+    }
+
+    tryRegister();
+    const id = setInterval(tryRegister, 1000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, [registry]);
+
+  return null;
+}
+
+/* ---------------- Loading Overlay ----------------
+   Small enhanced loader using THREE.DefaultLoadingManager.
+*/
+function LoadingOverlay() {
+  const [progress, setProgress] = useState(0);
+  const [visible, setVisible] = useState(true);
+  const [removed, setRemoved] = useState(false);
+  const fadeMs = 520;
+
+  useEffect(() => {
+    const mgr = THREE.DefaultLoadingManager;
+
+    function beginHide() {
+      setProgress(100);
+      setTimeout(() => {
+        setVisible(false);
+        setTimeout(() => setRemoved(true), fadeMs + 40);
+      }, 18);
+    }
+
+    if (mgr.itemsTotal === 0 && mgr.itemsLoaded === 0) {
+      setProgress(100);
+      setTimeout(() => {
+        setVisible(false);
+        setTimeout(() => setRemoved(true), fadeMs + 40);
+      }, 80);
+      return;
+    }
+
+    const onStart = (url, itemsLoaded, itemsTotal) => {
+      const p = itemsTotal > 0 ? Math.round((itemsLoaded / itemsTotal) * 100) : 0;
+      setProgress(p);
+      setVisible(true);
+    };
+    const onProgress = (url, itemsLoaded, itemsTotal) => {
+      const p = itemsTotal > 0 ? Math.round((itemsLoaded / itemsTotal) * 100) : 0;
+      setProgress(p);
+    };
+    const onLoad = () => {
+      setTimeout(beginHide, 80);
+    };
+    const onError = (url) => {
+      console.warn('[LoadingOverlay] asset load error', url);
+      setTimeout(beginHide, 220);
+    };
+
+    mgr.onStart = onStart;
+    mgr.onProgress = onProgress;
+    mgr.onLoad = onLoad;
+    mgr.onError = onError;
+
+    if (mgr.itemsLoaded === mgr.itemsTotal && mgr.itemsTotal > 0) {
+      setTimeout(beginHide, 40);
+    }
+
+    return () => {
+      try { if (mgr.onStart === onStart) mgr.onStart = null; } catch (e) {}
+      try { if (mgr.onProgress === onProgress) mgr.onProgress = null; } catch (e) {}
+      try { if (mgr.onLoad === onLoad) mgr.onLoad = null; } catch (e) {}
+      try { if (mgr.onError === onError) mgr.onError = null; } catch (e) {}
+    };
+  }, []);
+
+  if (removed) return null;
+
+  const r = 42;
+  const circumference = Math.PI * 2 * r;
+  const dash = Math.max(0, Math.min(1, progress / 100));
+  const dashOffset = circumference * (1 - dash);
 
   return (
-    <>
-      <SimpleLoader autoProceedMs={1000} />
-      {/* mark container for locomotive if used */}
-      <div id='app-root' data-scroll-container style={{ minHeight: '100vh' }}>
-        <ScrollSection triggersRef={triggersRef} />
-        <GsapOverlay triggersRef={triggersRef} />
+    <div
+      role="status"
+      aria-hidden={!visible}
+      style={{
+        pointerEvents: visible ? 'auto' : 'none',
+        position: 'fixed',
+        inset: 0,
+        zIndex: 999999,
+        background: 'rgba(60,60,60,1)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        transition: `opacity ${fadeMs}ms cubic-bezier(.2,.0,.0,1), visibility ${fadeMs}ms`,
+        opacity: visible ? 1 : 0,
+        visibility: visible ? 'visible' : 'hidden'
+      }}
+    >
+      <div style={{ textAlign: 'center', userSelect: 'none' }}>
+        <div style={{ width: 120, height: 120, margin: '0 auto', position: 'relative' }}>
+          <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
+            <circle cx="50" cy="50" r={r} stroke="#17004d" strokeWidth="6" fill="none" opacity="0.15" />
+            <circle
+              cx="50"
+              cy="50"
+              r={r}
+              stroke="rgba(255,255,255,0.92)"
+              strokeWidth="6"
+              fill="none"
+              strokeLinecap="round"
+              strokeDasharray={circumference}
+              strokeDashoffset={dashOffset}
+              style={{ transition: 'stroke-dashoffset 260ms linear' }}
+            />
+          </svg>
+
+          <div style={{
+            position: 'absolute',
+            left: 0, top: 0, right: 0, bottom: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            pointerEvents: 'none', fontFamily: 'Inter, Roboto, system-ui, sans-serif', color: '#fff'
+          }}>
+            <div style={{ fontSize: 20, fontWeight: 700 }}>{progress}%</div>
+          </div>
+        </div>
+
+        <div style={{ marginTop: 14, color: '#ddd', fontSize: 13 }}>
+          Loading scene — অনুগ্রহ করে অপেক্ষা করো...
+        </div>
       </div>
-    </>
-  )
+    </div>
+  );
+}
+
+// MAIN APP
+export default function App() {
+  useEffect(() => {
+    const id = 'app-leva-fix';
+    if (document.getElementById(id)) return;
+    const style = document.createElement('style');
+    style.id = id;
+    style.innerHTML = `
+      .leva-ui { position: fixed !important; top: 12px !important; left: 12px !important; z-index: 999999 !important; pointer-events: auto !important; }
+      canvas { z-index: 0 !important; display:block; }
+      body, #root { overflow: visible !important; }
+    `;
+    document.head.appendChild(style);
+  }, []);
+
+  // Reset scroll + theatre sequence on mount so every reload starts from top/zero
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    try { if ('scrollRestoration' in window.history) window.history.scrollRestoration = 'manual'; } catch (e) {}
+    try { window.scrollTo({ top: 0, left: 0, behavior: 'auto' }); document.documentElement.scrollTop = 0; document.body.scrollTop = 0; if (document.scrollingElement) document.scrollingElement.scrollTop = 0; } catch (e) {}
+    try { sessionStorage.removeItem('r3f_scroll_offset'); localStorage.removeItem('r3f_scroll_offset'); } catch (e) {}
+
+    try {
+      const sheet = window.__THEATRE_SHEET__ || (window.__THEATRE_PROJECT__ && window.__THEATRE_PROJECT__.sheet && window.__THEATRE_PROJECT__.sheet('Scene'));
+      if (sheet && sheet.sequence) {
+        try { sheet.sequence.position = 0; } catch (e) {}
+        try { if (sheet.sequence.pointer && typeof sheet.sequence.pointer.time === 'number') sheet.sequence.pointer.time = 0; } catch (e) {}
+        try { sheet.sequence.pause && sheet.sequence.pause(); } catch (e) {}
+        setTimeout(() => { try { sheet.sequence.position = 0; } catch (e) {} try { sheet.sequence.play && sheet.sequence.play(); } catch (e) {} }, 50);
+      }
+    } catch (e) { console.warn('[App] reset theatre sheet failed', e); }
+
+    const onBeforeUnload = () => {
+      try { window.scrollTo(0, 0); if (document.scrollingElement) document.scrollingElement.scrollTop = 0; } catch (e) {}
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    window.addEventListener('pagehide', onBeforeUnload);
+
+    return () => {
+      try { window.removeEventListener('beforeunload', onBeforeUnload); } catch (e) {}
+      try { window.removeEventListener('pagehide', onBeforeUnload); } catch (e) {}
+      try { if ('scrollRestoration' in window.history) window.history.scrollRestoration = 'auto'; } catch (e) {}
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (process.env.NODE_ENV === 'production') {
+      if (typeof theatreStateBundled !== 'undefined' && theatreStateBundled) {
+        window.__THEATRE_REMOTE_STATE__ = theatreStateBundled;
+        const cam = extractCameraFromState(theatreStateBundled);
+        if (cam) {
+          window.__THEATRE_STATIC_CAMERA__ = cam;
+          window.__THEATRE_B_START_CAMERA__ = window.__THEATRE_B_START_CAMERA__ || cam;
+          if (theatreStateBundled.durations) window.__THEATRE_REMOTE_DURATIONS__ = theatreStateBundled.durations;
+          if (theatreStateBundled.timeline && theatreStateBundled.timeline.durations) window.__THEATRE_REMOTE_DURATIONS__ = theatreStateBundled.timeline.durations;
+        } else {
+          window.__THEATRE_REMOTE_STATE__ = theatreStateBundled;
+        }
+        console.info('[App] applied bundled theatreState fallback (production)');
+      }
+    }
+  }, []);
+
+  return (
+    <Provider store={store}>
+      <RegistryProvider>
+        <Leva collapsed={false} />
+        {process.env.NODE_ENV !== 'production' && <StudioManager />}
+
+        <TimelineBootstrap />
+        <ScrollMapper pxPerSec={5} />
+
+        <LoadingOverlay />
+
+        <Canvas style={{ position: 'fixed', inset: 0 }}>
+          <SheetBinder>
+            <CameraSwitcher theatreKey="Camera" />
+            <CameraRig />
+            <WaterScene />
+
+            <Suspense fallback={null}>
+              <Enveremnt />
+            </Suspense>
+          </SheetBinder>
+        </Canvas>
+
+        <DebugScrubber />
+      </RegistryProvider>
+    </Provider>
+  );
 }

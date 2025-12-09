@@ -10,7 +10,7 @@ import { useFrame } from '@react-three/fiber';
  * - radius: tube radius (if useTube true) -- small by default
  * This component draws a tidy tube + line so you can see the helix in the scene.
  */
-export default function HelixLine({ points = [], color = '#00ffea', radius = 0.04, tubularSegments = 800 }) {
+export default function HelixLine({ points = [], color = '#00ffea', radius = 1.04, tubularSegments = 800 }) {
   const curve = useMemo(() => {
     if (!points || points.length === 0) return null;
     return new THREE.CatmullRomCurve3(points, false, 'catmullrom', 0.5);
