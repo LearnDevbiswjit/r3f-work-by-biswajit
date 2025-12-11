@@ -3,7 +3,7 @@ import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
   phase: 'theatreA', // 'theatreA' | 'helix' | 'theatreB'
-  durations: { theatreA: 6 * 60, helix: 60 * 60, theatreB: 30 * 60 }, // seconds
+  durations: { theatreA: 20 * 60, helix: 60 * 60, theatreB: 60 * 60 }, // seconds
   overallProgress: 0,
   isSeeking: false,
 };

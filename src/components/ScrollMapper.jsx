@@ -1,3 +1,4 @@
+//ScrollMapper.jsx
 import React, { useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { setOverallProgress } from '../store/slices/timelineSlice'; 
@@ -10,7 +11,7 @@ import { setOverallProgress } from '../store/slices/timelineSlice';
   - window.__scrollJumpTo(norm) remains but uses smooth scrolling and updates target immediately.
 */
 
-export default function ScrollMapper({ pxPerSec = 5, smoothing = 0.12 }) {
+export default function ScrollMapper({ pxPerSec = 120, smoothing = 0.12 }) {
   const dispatch = useDispatch();
   const durations = useSelector(s => s.timeline.durations);
   const ticking = useRef(false);
