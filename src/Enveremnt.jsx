@@ -123,11 +123,11 @@ export default function Enveremnt () {
         />
       </e.group>
  
-      <e.group theatreKey='Cloud-front-of-camera' position={[0, 0, 1]}>
+      {/* <e.group theatreKey='Cloud-front-of-camera' position={[0, 0, 1]}>
         <CloudFloating
           jitterStabilize={true}
-          jitterLowpassAlpha={0.06} // keeps low-frequency camera motion (large pans) intact
-          jitterCompStrength={1.0} // cancel the high-frequency part fully
+          jitterLowpassAlpha={0.06}   
+          jitterCompStrength={1.0} 
           numPlanes={20}
           opacity={0.52}
           color1='#ffffff'
@@ -150,7 +150,7 @@ export default function Enveremnt () {
             dissolveWidth: 0.11
           }}
         />
-      </e.group>
+      </e.group> */}
 
       <e.group theatreKey='Cloud-front' position={[0, 0, 1]}>
         <CloudFloating
@@ -167,7 +167,7 @@ export default function Enveremnt () {
             warpAmt: 0.25,
             ridgePower: 0.1,
             ridgeMix: 0.1,
-            dir: [-1.0, -0.9],
+            dir: [-2.0, -0.9],
             driftSpeed: 0.018,
             wobbleFreq: 0.01,
             wobbleMag: 0.02,
@@ -178,7 +178,7 @@ export default function Enveremnt () {
         />
       </e.group>  
 
-       <e.group theatreKey='Cloud-front-New' position={[0, 0, 1]}>
+       {/* <e.group theatreKey='Cloud-front-New' position={[0, 0, 1]}>
         <CloudFloatingNew
           numPlanes={30}
           opacity={0.5}
@@ -193,7 +193,7 @@ export default function Enveremnt () {
             warpAmt: 0.25,
             ridgePower: 0.1,
             ridgeMix: 0.1,
-            dir: [-1.0, -0.9],
+            dir: [-2.0, -0.9],
             driftSpeed: 0.018,
             wobbleFreq: 0.01,
             wobbleMag: 0.02,
@@ -202,7 +202,7 @@ export default function Enveremnt () {
             dissolveWidth: 0.11
           }}
         />
-      </e.group>
+      </e.group> */}
 
       <e.group theatreKey='Cloud-Back' position={[0, 0, 1]}>
         <CloudFloating
@@ -315,8 +315,8 @@ export default function Enveremnt () {
           seedOffset={100}
         />
       </e.mesh>
-      <hemisphereLight args={['#cfe7ff', '#6b4f5f', 0.35]} />
-      <directionalLight position={[30, 40, 10]} intensity={0.25} />
+      <hemisphereLight args={['#cfe7ff', '#6b4f5f', 0.15]} />
+      <directionalLight position={[30, 40, 10]} intensity={0.75} />
 
       <ambientLight intensity={1} />
       <e.group theatreKey='under-water-maoutain-side' position={[0, 0, 1]}>

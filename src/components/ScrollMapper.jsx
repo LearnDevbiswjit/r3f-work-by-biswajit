@@ -11,7 +11,7 @@ import { setOverallProgress } from '../store/slices/timelineSlice';
   - window.__scrollJumpTo(norm) remains but uses smooth scrolling and updates target immediately.
 */
 
-export default function ScrollMapper({ pxPerSec = 120, smoothing = 0.12 }) {
+export default function ScrollMapper({ pxPerSec = 100, smoothing = 0.12 }) {
   const dispatch = useDispatch();
   const durations = useSelector(s => s.timeline.durations);
   const ticking = useRef(false);
@@ -30,7 +30,7 @@ export default function ScrollMapper({ pxPerSec = 120, smoothing = 0.12 }) {
     spacerRef.current = el;
   }, [durations, pxPerSec]);
 
-  // read immediate scroll target into targetNorm
+  // read immediate scroll target into targetNorm   
   useEffect(() => {
     function sampleTargetFromWindow() {
       const y = window.scrollY || window.pageYOffset || 0;
