@@ -808,6 +808,18 @@ video {
   line-height: 1rem;
 }
 
+.text-\[clamp\(28px\2c 5vw\2c 72px\)\] {
+  font-size: clamp(28px,5vw,72px);
+}
+
+.text-\[clamp\(40px\2c 7vw\2c 110px\)\] {
+  font-size: clamp(40px,7vw,110px);
+}
+
+.text-\[clamp\(40px\2c 8vw\2c 120px\)\] {
+  font-size: clamp(40px,8vw,120px);
+}
+
 .font-\[200\] {
   font-weight: 200;
 }

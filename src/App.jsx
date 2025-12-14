@@ -19,6 +19,7 @@ import StudioManager from './StudioManager'
 import { registerSimulatedTheatre } from './theatre/bootstrapRegisterSimulated'
 import { registerSheetTimelines } from './theatre/autoRegisterSheet'
 import * as THREE from 'three'
+import GsapOverlay from './GsapOverlay.jsx'
 
 // ---------- Leva / Studio toggles ----------
 const isMobile =
@@ -172,6 +173,8 @@ function TimelineBootstrap() {
 }
 
 // ---------- Loading Overlay ----------
+// --- inside LoadingOverlay() ---
+
 function LoadingOverlay() {
   const [progress, setProgress] = useState(0)
   const [visible, setVisible] = useState(true)
@@ -180,20 +183,27 @@ function LoadingOverlay() {
 
   useEffect(() => {
     const mgr = THREE.DefaultLoadingManager
+
     const beginHide = () => {
       setProgress(100)
+
+      // 🔥 REQUIRED FOR GSAP OVERLAY
+      window.dispatchEvent(new Event('APP_LOADER_DONE'))
+
       setTimeout(() => {
         setVisible(false)
         setTimeout(() => setRemoved(true), fadeMs + 40)
       }, 18)
     }
-    const onProgress = (_, l, t) =>
+
+    mgr.onProgress = (_, l, t) =>
       setProgress(t > 0 ? Math.round((l / t) * 100) : 0)
-    const onLoad = () => setTimeout(beginHide, 80)
-    mgr.onProgress = onProgress
-    mgr.onLoad = onLoad
+
+    mgr.onLoad = () => setTimeout(beginHide, 80)
+
     if (mgr.itemsLoaded === mgr.itemsTotal && mgr.itemsTotal > 0)
       setTimeout(beginHide, 40)
+
     return () => {
       mgr.onProgress = null
       mgr.onLoad = null
@@ -201,9 +211,6 @@ function LoadingOverlay() {
   }, [])
 
   if (removed) return null
-  const r = 42
-  const c = Math.PI * 2 * r
-  const dashOffset = c * (1 - Math.min(1, progress / 100))
 
   return (
     <div
@@ -211,7 +218,7 @@ function LoadingOverlay() {
         position: 'fixed',
         inset: 0,
         zIndex: 999999,
-        background: 'rgba(60,60,60,1)',
+        background: '#3c3c3c',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -220,26 +227,11 @@ function LoadingOverlay() {
         transition: `opacity ${fadeMs}ms, visibility ${fadeMs}ms`
       }}
     >
-      <div style={{ textAlign: 'center', color: '#fff' }}>
-        <svg viewBox="0 0 100 100" width={120} height={120}>
-          <circle cx="50" cy="50" r={r} stroke="#17004d" strokeWidth="6" fill="none" opacity="0.15" />
-          <circle
-            cx="50"
-            cy="50"
-            r={r}
-            stroke="rgba(255,255,255,0.92)"
-            strokeWidth="6"
-            fill="none"
-            strokeLinecap="round"
-            strokeDasharray={c}
-            strokeDashoffset={dashOffset}
-          />
-        </svg>
-        <div style={{ marginTop: 10 }}>{progress}%</div>
-      </div>
+      <div style={{ color: '#fff' }}>{progress}%</div>
     </div>
   )
 }
+
 
 // ---------- MAIN ----------
 export default function App() {
@@ -265,6 +257,7 @@ export default function App() {
         <TimelineBootstrap />
         <ScrollMapper pxPerSec={5} />
         <LoadingOverlay />
+        <GsapOverlay/>
         <Canvas style={{ position: 'fixed', inset: 0 }}>
           <SheetBinder>
             <CameraSwitcher theatreKey="Camera" />
