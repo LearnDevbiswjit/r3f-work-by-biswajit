@@ -20,6 +20,7 @@ import { registerSimulatedTheatre } from './theatre/bootstrapRegisterSimulated'
 import { registerSheetTimelines } from './theatre/autoRegisterSheet'
 import * as THREE from 'three'
 import GsapOverlay from './GsapOverlay.jsx'
+import TimelineWhiteFade from './components/TimelineWhiteFade'
 
 // ---------- Leva / Studio toggles ----------
 const isMobile =
@@ -258,7 +259,11 @@ export default function App() {
         <ScrollMapper pxPerSec={5} />
         <LoadingOverlay />
         <GsapOverlay/>
-        <Canvas style={{ position: 'fixed', inset: 0 }}>
+        <TimelineWhiteFade
+triggerAtSec={540}   // 8 minutes
+  fadeDuration={1.2}
+/>
+        <Canvas style={{ position: 'fixed', inset: 0, top:0, bottom:0, }}>
           <SheetBinder>
             <CameraSwitcher theatreKey="Camera" />
             <CameraRig />
