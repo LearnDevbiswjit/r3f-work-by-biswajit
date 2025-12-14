@@ -6,7 +6,7 @@ import * as THREE from 'three';
  */
 
 export class HelixCurve extends THREE.Curve {
-  constructor({ turns = 1, radius = 50, height = 1 } = {}) {
+  constructor({ turns = 0.5, radius = 50, height = 1 } = {}) {
     super();
     this.turns = turns;
     this.radius = radius;
@@ -25,7 +25,7 @@ export class HelixCurve extends THREE.Curve {
  * makeHelixPoints
  * returns array of THREE.Vector3 (length = points+1)
  */
-export function makeHelixPoints({ turns = 0.95, height = 10, radius = 7, points = 2000 } = {}) {
+export function makeHelixPoints({ turns = 0.55, height = 10, radius = 7, points = 2000 } = {}) {
   const arr = [];
   for (let i = 0; i <= points; i++) {
     const t = i / points;

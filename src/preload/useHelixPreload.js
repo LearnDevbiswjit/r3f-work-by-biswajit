@@ -12,7 +12,7 @@ import * as THREE from 'three';
  * Exposes results at window.__HELIX_PRELOADED__ = { ready, points, curve, lut, tubeGeometry, bricksBase, bricksMeta }
  */
 
-function makeHelixPoints({ turns = 0.95, height = 40, radius = 25, points = 2000 } = {}) {
+function makeHelixPoints({ turns = 0.55, height = 40, radius = 25, points = 2000 } = {}) {
   const arr = [];
   for (let i = 0; i <= points; i++) {
     const t = i / points;
@@ -43,7 +43,7 @@ function buildArcLengthLUT(curve, samples = 1200) {
 }
 
 export default function useHelixPreload({
-  turns = 0.95,
+  turns = 0.15,
   height = 40,
   radius = 25,
   points = 2000,
