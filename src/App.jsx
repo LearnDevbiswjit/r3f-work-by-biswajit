@@ -268,9 +268,9 @@ triggerAtSec={540}   // 8 minutes
             <CameraSwitcher theatreKey="Camera" />
             <CameraRig />
             <WaterScene />
-            <Suspense fallback={null}>
+            {/* <Suspense fallback={null}>
               <Enveremnt />
-            </Suspense>
+            </Suspense> */}
           </SheetBinder>
         </Canvas>
         {!isMobile && <DebugScrubber />}
