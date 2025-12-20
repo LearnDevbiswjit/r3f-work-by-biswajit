@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { setOverallProgress } from '../store/slices/timelineSlice'
 
-export default function ScrollMapper({ pxPerSec = 5, smoothing = 0.12 }) {
+export default function ScrollMapper({ pxPerSec = 10, smoothing = 0.25 }) {
   const dispatch = useDispatch()
   const durations = useSelector(s => s.timeline.durations)
 

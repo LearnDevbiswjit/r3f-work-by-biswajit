@@ -1,69 +1,98 @@
 // src/store/listeners.js
-import { createListenerMiddleware } from '@reduxjs/toolkit';
-import { setPhase, setOverallProgress } from './slices/timelineSlice';
-import { setMode, setProgress, lockCamera, unlockCamera, setLastCommand } from './slices/cameraSlice';
+import { createListenerMiddleware } from '@reduxjs/toolkit'
+import { setPhase, setOverallProgress } from './slices/timelineSlice'
+import {
+  setMode,
+  setProgress,
+  lockCamera,
+  unlockCamera,
+  setLastCommand
+} from './slices/cameraSlice'
 
-/*
-  listenerMiddleware:
-  - maps overallProgress -> phases (theatreA / helix / theatreB)
-  - sets camera.mode accordingly and commands registry
-  - uses registry.seekTimelineNormalized('theatreA'|'theatreB', local) for theatre phases
-*/
+const THEATRE_A_SCROLL_SPEED = 1.6
+const END_EPS = 0.999
 
-export const listenerMiddleware = createListenerMiddleware();
+export const listenerMiddleware = createListenerMiddleware()
 
-let prevOverall = null;
-let prevPhase = null;
+let prevOverall = null
+let prevPhase = null
+let autoAdvancedA = false
 
 listenerMiddleware.startListening({
   actionCreator: setOverallProgress,
-  effect: async (action, listenerApi) => {
-    const p = action.payload;
-    if (prevOverall != null && Math.abs(prevOverall - p) < 1e-6) return;
-    prevOverall = p;
+  effect: async (action, api) => {
+    const p = action.payload
+    const prev = prevOverall
+    prevOverall = p
 
-    const state = listenerApi.getState();
-    const d = state.timeline.durations || { theatreA: 20 * 60, helix: 20 * 60, theatreB: 30 * 60 };
-    const total = Math.max(1, d.theatreA + d.helix + d.theatreB);
-    const tA = d.theatreA / total;
-    const tH = d.helix / total;
-    // tB = remainder
+    const forward = prev == null ? true : p > prev
 
-    const registry = (typeof window !== 'undefined' && window.__TimelineRegistry__) ? window.__TimelineRegistry__ : null;
+    const state = api.getState()
+    const d = state.timeline.durations
+    const total = d.theatreA + d.helix + d.theatreB
+    const tA = d.theatreA / total
+    const tH = d.helix / total
 
+    const registry = window.__TimelineRegistry__ || null
+
+    /* ================= THEATRE A ================= */
     if (p <= tA) {
-      // theatreA phase
-      const local = tA === 0 ? 0 : (p / tA);
+      // 🔁 back scroll reset
+      if (!forward) autoAdvancedA = false
+
+      let local = p / tA
+      local = Math.min(1, local * THEATRE_A_SCROLL_SPEED)
+
       if (prevPhase !== 'theatreA') {
-        listenerApi.dispatch(setPhase('theatreA'));
-        listenerApi.dispatch(lockCamera());
-        listenerApi.dispatch(setMode('theatre'));
-        prevPhase = 'theatreA';
+        api.dispatch(setPhase('theatreA'))
+        api.dispatch(lockCamera())
+        api.dispatch(setMode('theatre'))
+        prevPhase = 'theatreA'
       }
-      registry?.seekTimelineNormalized?.('theatreA', local);
-    } else if (p > tA && p <= tA + tH) {
-      // helix phase
-      const local = (p - tA) / tH;
-      if (prevPhase !== 'helix') {
-        listenerApi.dispatch(setPhase('helix'));
-        listenerApi.dispatch(unlockCamera());
-        listenerApi.dispatch(setMode('helix'));
-        prevPhase = 'helix';
+
+      registry?.seekTimelineNormalized('theatreA', local)
+
+      // 🔥 forward only auto jump
+      if (forward && local >= END_EPS && !autoAdvancedA) {
+        autoAdvancedA = true
+        return
       }
-      listenerApi.dispatch(setProgress(local));
-    } else {
-      // theatreB phase
-      const start = tA + tH;
-      const local = (p - start) / (1 - start);
-      if (prevPhase !== 'theatreB') {
-        listenerApi.dispatch(setPhase('theatreB'));
-        listenerApi.dispatch(lockCamera());
-        listenerApi.dispatch(setMode('theatre'));
-        prevPhase = 'theatreB';
-      }
-      registry?.seekTimelineNormalized?.('theatreB', local);
     }
 
-    listenerApi.dispatch(setLastCommand({ type: 'progress-set', overallProgress: p, ts: Date.now() }));
+    /* ================= HELIX ================= */
+    else if (p > tA && p <= tA + tH) {
+      const local = (p - tA) / tH
+
+      if (prevPhase !== 'helix') {
+        api.dispatch(setPhase('helix'))
+        api.dispatch(unlockCamera())
+        api.dispatch(setMode('helix'))
+        prevPhase = 'helix'
+      }
+
+      api.dispatch(setProgress(local))
+    }
+
+    /* ================= THEATRE B ================= */
+    else {
+      const local = (p - (tA + tH)) / (1 - (tA + tH))
+
+      if (prevPhase !== 'theatreB') {
+        api.dispatch(setPhase('theatreB'))
+        api.dispatch(lockCamera())
+        api.dispatch(setMode('theatre'))
+        prevPhase = 'theatreB'
+      }
+
+      registry?.seekTimelineNormalized('theatreB', local)
+    }
+
+    api.dispatch(
+      setLastCommand({
+        type: 'progress-set',
+        overallProgress: p,
+        ts: Date.now()
+      })
+    )
   }
-});
+})

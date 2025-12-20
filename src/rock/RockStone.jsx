@@ -4,10 +4,10 @@ import { useGLTF, useTexture } from '@react-three/drei'
 import * as THREE from 'three'
 
 export default function RockStone(props) { 
-  const pivotRef = useRef()   // Rotate/animate this from Theatre
+  const pivotRef = useRef()   // Rotate/animate this from Theatre 
   const modelRef = useRef()   // All meshes live under this group
 
-  const { nodes } = useGLTF('/models/Rock-Product.glb')
+  const { nodes } = useGLTF('/models/Rock-Product-Hero-1.glb')   
 
   // Texture + material
   const rockTex = useTexture('../textures/rock-texture.jpg')
@@ -630,3 +630,6 @@ export default function RockStone(props) {
 }
 
 useGLTF.preload('/models/Rock-Product.glb')
+
+
+ 

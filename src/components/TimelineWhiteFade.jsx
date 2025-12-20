@@ -12,7 +12,7 @@ import { gsap } from 'gsap'
 */
 
 export default function TimelineWhiteFade({
-  triggerAtSec = 480,   // 8 minutes
+  triggerAtSec = 680,   // 8 minutes
   fadeDuration = 1.5
 }) {
   const overlayRef = useRef(null)
