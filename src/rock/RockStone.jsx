@@ -7,10 +7,10 @@ export default function RockStone(props) {
   const pivotRef = useRef()   // Rotate/animate this from Theatre 
   const modelRef = useRef()   // All meshes live under this group
 
-  const { nodes } = useGLTF('/models/Rock-Product-Hero-1.glb')   
+  const { nodes } = useGLTF('../models/Rock-Product-Hero-1.glb')   
 
   // Texture + material
-  const rockTex = useTexture('../textures/rock-texture.jpg')
+  const rockTex = useTexture('/textures/rock-texture.jpg')
   useMemo(() => {
     rockTex.wrapS = rockTex.wrapT = THREE.RepeatWrapping
     rockTex.repeat.set(2, 2)

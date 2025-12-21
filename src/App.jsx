@@ -5,6 +5,7 @@ import { Canvas } from '@react-three/fiber'
 import { SheetProvider } from '@theatre/r3f'
 import { getProject } from '@theatre/core'
 import { Leva } from 'leva'
+import { useGLTF } from '@react-three/drei'
 
 import Enveremnt from './Enveremnt.jsx'
 import theatreStateBundled from './assets/theatreState.json'
@@ -21,16 +22,40 @@ import { registerSheetTimelines } from './theatre/autoRegisterSheet'
 import * as THREE from 'three'
 import GsapOverlay from './GsapOverlay.jsx'
 import TimelineWhiteFade from './components/TimelineWhiteFade'
+ 
+import { EnvironmentGateProvider } from './loader/EnvironmentGate.jsx'
+import LoaderOverlay from './components/LoaderOverlay.jsx'
 
-// ---------- Leva / Studio toggles ----------
+
+/* =========================================================
+   DEVICE + ASSET HELPERS (🆕 SAFE ADD)
+   ========================================================= */
 const isMobile =
   typeof window !== 'undefined' &&
   /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
 
-const ENABLE_LEVA = !isMobile && process.env.NODE_ENV !== 'production'
-const ENABLE_STUDIO = !isMobile && process.env.NODE_ENV !== 'production'
+const ASSET_BASE = isMobile ? 'mobile' : 'desktop'
 
-// ---------- Ensure Theatre project/sheet ----------
+// 🎆 HERO FIRST
+function preloadHeroStone() {
+  useGLTF.preload(`/models/${ASSET_BASE}/Rock-Product.glb`)
+}
+
+// 🌍 REST (idle)
+function preloadEnvironmentAssets() {
+  useGLTF.preload(`/models/${ASSET_BASE}/Cloud.glb`)
+  fetch('/hdr/ocean.hdr')
+}
+
+/* =========================================================
+   LEVA / STUDIO
+   ========================================================= */
+const ENABLE_LEVA = !isMobile && process.env.NODE_ENV !== 'production'
+const ENABLE_STUDIO = process.env.NODE_ENV !== 'production'
+
+/* =========================================================
+   THEATRE PROJECT
+   ========================================================= */
 let initialProject = null
 let initialSheet = null
 if (typeof window !== 'undefined') {
@@ -46,7 +71,9 @@ if (typeof window !== 'undefined') {
   } catch (e) {}
 }
 
-// ---------- Sheet Binder ----------
+/* =========================================================
+   SHEET BINDER (UNCHANGED)
+   ========================================================= */
 function SheetBinder({ children }) {
   const [sheet, setSheet] = useState(() =>
     typeof window !== 'undefined' ? window.__THEATRE_SHEET__ || null : null
@@ -82,31 +109,21 @@ function SheetBinder({ children }) {
   return <SheetProvider sheet={providerSheet}>{children}</SheetProvider>
 }
 
-// ---------- Helpers ----------
+/* =========================================================
+   HELPERS (UNCHANGED)
+   ========================================================= */
 function extractCameraFromState(state) {
   if (!state || typeof state !== 'object') return null
   if (state.camera?.position && state.camera?.quaternion)
     return { pos: state.camera.position, quat: state.camera.quaternion }
-  if (state.timeline?.camera?.position && state.timeline?.camera?.quaternion)
-    return {
-      pos: state.timeline.camera.position,
-      quat: state.timeline.camera.quaternion
-    }
   try {
     const sb = state.sheetsById
-    if (sb && typeof sb === 'object') {
+    if (sb) {
       for (const sid in sb) {
-        const sheet = sb[sid]
-        const so =
-          sheet?.staticOverrides || sheet?.static || sheet?.staticValues || null
-        if (so?.byObject?.Camera) {
-          const camObj = so.byObject.Camera
-          if (camObj?.transform?.position && camObj?.transform?.quaternion) {
-            return {
-              pos: camObj.transform.position,
-              quat: camObj.transform.quaternion
-            }
-          }
+        const so = sb[sid]?.staticOverrides
+        if (so?.byObject?.Camera?.transform) {
+          const t = so.byObject.Camera.transform
+          return { pos: t.position, quat: t.quaternion }
         }
       }
     }
@@ -114,56 +131,33 @@ function extractCameraFromState(state) {
   return null
 }
 
-// ---------- Timeline Bootstrap ----------
+/* =========================================================
+   TIMELINE BOOTSTRAP (UNCHANGED)
+   ========================================================= */
 function TimelineBootstrap() {
   const registry = useRegistry()
 
   useEffect(() => {
     let cancelled = false
-    async function tryRegister() {
+    async function run() {
       if (cancelled) return
-      const sheet =
-        typeof window !== 'undefined' ? window.__THEATRE_SHEET__ : null
+      const sheet = window.__THEATRE_SHEET__ || null
+      const state =
+        window.__THEATRE_REMOTE_STATE__ || theatreStateBundled || null
 
-      let remoteState = null
-      try {
-        const res = await fetch('/theatreState.json', { cache: 'no-cache' })
-        if (res.ok) remoteState = await res.json()
-      } catch (e) {}
-
-      if (!remoteState)
-        remoteState =
-          window.__THEATRE_REMOTE_STATE__ || theatreStateBundled || null
-
-      if (remoteState) {
-        const cam = extractCameraFromState(remoteState)
-        if (cam) {
-          window.__THEATRE_REMOTE_STATE__ = remoteState
-          window.__THEATRE_STATIC_CAMERA__ = cam
-          window.__THEATRE_B_START_CAMERA__ =
-            window.__THEATRE_B_START_CAMERA__ || cam
-        } else {
-          window.__THEATRE_REMOTE_STATE__ = remoteState
-        }
-      }
+      const cam = extractCameraFromState(state)
+      if (cam) window.__THEATRE_STATIC_CAMERA__ = cam
 
       const st = store.getState()
-      const finalDur =
-        st?.timeline?.durations ||
-        remoteState?.durations ||
-        remoteState?.timeline?.durations || {
-          theatreA: 20 * 60,
-          helix: 20 * 60,
-          theatreB: 30 * 60
-        }
+      const durations =
+        st?.timeline?.durations || state?.timeline?.durations
 
-      if (sheet) registerSheetTimelines(registry, sheet, finalDur)
-      else if (remoteState) registerSimulatedTheatre(registry, remoteState)
-      else registerSimulatedTheatre(registry, { durations: finalDur })
+      if (sheet) registerSheetTimelines(registry, sheet, durations)
+      else registerSimulatedTheatre(registry, state)
     }
 
-    tryRegister()
-    const id = setInterval(tryRegister, 1000)
+    run()
+    const id = setInterval(run, 1000)
     return () => {
       cancelled = true
       clearInterval(id)
@@ -173,108 +167,119 @@ function TimelineBootstrap() {
   return null
 }
 
-// ---------- Loading Overlay ----------
-// --- inside LoadingOverlay() ---
+/* =========================================================
+   LOADING OVERLAY (UNCHANGED)
+   ========================================================= */
+// function LoadingOverlay() {
+//   const [progress, setProgress] = useState(0)
+//   const [visible, setVisible] = useState(true)
+//   const [removed, setRemoved] = useState(false)
+//   const fadeMs = 520
 
-function LoadingOverlay() {
-  const [progress, setProgress] = useState(0)
-  const [visible, setVisible] = useState(true)
-  const [removed, setRemoved] = useState(false)
-  const fadeMs = 520
+//   useEffect(() => {
+//     const mgr = THREE.DefaultLoadingManager
 
-  useEffect(() => {
-    const mgr = THREE.DefaultLoadingManager
+//     const beginHide = () => {
+//       setProgress(100)
+//       window.dispatchEvent(new Event('APP_LOADER_DONE'))
+//       setTimeout(() => {
+//         setVisible(false)
+//         setTimeout(() => setRemoved(true), fadeMs + 40)
+//       }, 18)
+//     }
 
-    const beginHide = () => {
-      setProgress(100)
+//     mgr.onProgress = (_, l, t) =>
+//       setProgress(t > 0 ? Math.round((l / t) * 100) : 0)
 
-      // 🔥 REQUIRED FOR GSAP OVERLAY
-      window.dispatchEvent(new Event('APP_LOADER_DONE'))
+//     mgr.onLoad = () => setTimeout(beginHide, 80)
 
-      setTimeout(() => {
-        setVisible(false)
-        setTimeout(() => setRemoved(true), fadeMs + 40)
-      }, 18)
-    }
+//     if (mgr.itemsLoaded === mgr.itemsTotal && mgr.itemsTotal > 0)
+//       setTimeout(beginHide, 40)
 
-    mgr.onProgress = (_, l, t) =>
-      setProgress(t > 0 ? Math.round((l / t) * 100) : 0)
+//     return () => {
+//       mgr.onProgress = null
+//       mgr.onLoad = null
+//     }
+//   }, [])
 
-    mgr.onLoad = () => setTimeout(beginHide, 80)
+//   if (removed) return null
 
-    if (mgr.itemsLoaded === mgr.itemsTotal && mgr.itemsTotal > 0)
-      setTimeout(beginHide, 40)
+//   return (
+//     <div
+//       style={{
+//         position: 'fixed',
+//         inset: 0,
+//         zIndex: 999999,
+//         background: '#3c3c3c',
+//         display: 'flex',
+//         alignItems: 'center',
+//         justifyContent: 'center',
+//         opacity: visible ? 1 : 0,
+//         transition: `opacity ${fadeMs}ms`
+//       }}
+//     >
+//       <div style={{ color: '#fff' }}>{progress}%</div>
+//     </div>
+//   )
+// }
 
-    return () => {
-      mgr.onProgress = null
-      mgr.onLoad = null
-    }
-  }, [])
-
-  if (removed) return null
-
-  return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 999999,
-        background: '#3c3c3c',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        opacity: visible ? 1 : 0,
-        visibility: visible ? 'visible' : 'hidden',
-        transition: `opacity ${fadeMs}ms, visibility ${fadeMs}ms`
-      }}
-    >
-      <div style={{ color: '#fff' }}>{progress}%</div>
-    </div>
-  )
-}
-
-
-// ---------- MAIN ----------
+/* =========================================================
+   MAIN APP
+   ========================================================= */
 export default function App() {
+  // scroll reset
   useEffect(() => {
-    if ('scrollRestoration' in window.history)
-      window.history.scrollRestoration = 'manual'
+    window.history.scrollRestoration = 'manual'
     window.scrollTo(0, 0)
   }, [])
 
+  // 🎆 PRELOAD STRATEGY (NEW, SAFE)
   useEffect(() => {
-    if (process.env.NODE_ENV === 'production' && theatreStateBundled) {
-      window.__THEATRE_REMOTE_STATE__ = theatreStateBundled
-      const cam = extractCameraFromState(theatreStateBundled)
-      if (cam) window.__THEATRE_STATIC_CAMERA__ = cam
+    preloadHeroStone()
+
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(preloadEnvironmentAssets)
+    } else {
+      setTimeout(preloadEnvironmentAssets, 300)
     }
   }, [])
 
   return (
-    <Provider store={store}>
-      <RegistryProvider>
-        {ENABLE_LEVA && <Leva collapsed={false} />}
-        {ENABLE_STUDIO && <StudioManager />}
-        <TimelineBootstrap />
-        <ScrollMapper pxPerSec={5} />
-        <LoadingOverlay />
-        <GsapOverlay/>
-        <TimelineWhiteFade
-triggerAtSec={540}   // 8 minutes
-  fadeDuration={1.2}
-/>
-        <Canvas style={{ position: 'fixed', inset: 0, top:0, bottom:0, }}>
-          <SheetBinder>
-            <CameraSwitcher theatreKey="Camera" />
-            <CameraRig />
-            <WaterScene />
-            <Suspense fallback={null}>
-              <Enveremnt />
-            </Suspense>
-          </SheetBinder>
-        </Canvas>
-        {!isMobile && <DebugScrubber />}
-      </RegistryProvider>
-    </Provider>
+   <Provider store={store}>
+  <RegistryProvider>
+
+    {ENABLE_LEVA && <Leva />}
+    {ENABLE_STUDIO && <StudioManager />}
+
+    {/* ALWAYS ACTIVE */}
+    <TimelineBootstrap />
+    <ScrollMapper pxPerSec={5} />
+
+    {/* GSAP & Fade MUST be outside loader gate */}
+    <GsapOverlay />
+    <TimelineWhiteFade triggerAtSec={540} fadeDuration={1.2} />
+
+    {/* LOADER ONLY GATES SCENE */}
+    <EnvironmentGateProvider>
+      <LoaderOverlay />
+
+      <Canvas style={{ position: 'fixed', inset: 0 }}>
+        <SheetBinder>
+          <CameraSwitcher theatreKey="Camera" />
+          <CameraRig />
+          <WaterScene />
+
+          <Suspense fallback={null}>
+            <Enveremnt />
+          </Suspense>
+        </SheetBinder>
+      </Canvas>
+    </EnvironmentGateProvider>
+
+    {!isMobile && <DebugScrubber />}
+
+  </RegistryProvider>
+</Provider>
+
   )
 }

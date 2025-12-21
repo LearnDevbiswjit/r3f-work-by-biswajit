@@ -1,7 +1,18 @@
-import React from "react";
-import { createRoot } from "react-dom/client";
-import App from "./App";
-import "./App.css";
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import App from './App'
 
-const root = createRoot(document.getElementById("root"));
-root.render(<App />); 
+// ✅ Service Worker ONLY in production
+if (
+  import.meta.env.PROD &&
+  'serviceWorker' in navigator
+) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+  })
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+ 
+  <App />
+)

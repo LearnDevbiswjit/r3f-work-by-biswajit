@@ -1,34 +1,58 @@
-import { useProgress } from '@react-three/drei'
+// src/components/LoaderOverlay.jsx
 import { useEffect, useState } from 'react'
+import * as THREE from 'three'
+import { useEnvironmentGate } from '../loader/EnvironmentGate'
 
 export default function LoaderOverlay() {
-  const { progress, active } = useProgress()
-  const [visible, setVisible] = useState(true)
+  const { envReady } = useEnvironmentGate()
+  const [progress, setProgress] = useState(0)
+  const [assetsDone, setAssetsDone] = useState(false)
+  const [hide, setHide] = useState(false)
 
   useEffect(() => {
-    if (!active && progress === 100) {
-      window.dispatchEvent(new Event('APP_LOADER_DONE'))
-      setTimeout(() => setVisible(false), 600)
-    }
-  }, [active, progress])
+    const mgr = THREE.DefaultLoadingManager
 
-  if (!visible) return null
+    mgr.onProgress = (_, loaded, total) => {
+      if (total > 0) {
+        setProgress(Math.round((loaded / total) * 100))
+      }
+    }
+
+    mgr.onLoad = () => {
+      setAssetsDone(true)
+      console.log('[LOADER] assets loaded') 
+    }
+
+    return () => {
+      mgr.onProgress = null
+      mgr.onLoad = null
+    }
+  }, [])
+
+  useEffect(() => {
+    if (assetsDone && envReady) {
+      setProgress(100)
+      setTimeout(() => setHide(true), 400)
+    }
+  }, [assetsDone, envReady])
+
+  if (hide) return null
 
   return (
     <div
       style={{
         position: 'fixed',
         inset: 0,
-        background: '#3c3c3c',
+        background: '#2b2b2b',
+        color: '#fff',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        color: '#fff',
-        fontSize: '22px',
-        zIndex: 999999
+        zIndex: 9999,
+        fontSize: 22
       }}
     >
-      Loading {Math.round(progress)}%
+      Loading {progress}%
     </div>
   )
 }

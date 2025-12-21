@@ -16,4 +16,7 @@ export default defineConfig({
     rollupOptions: { output: { manualChunks: {} } },
     chunkSizeWarningLimit: 5000,
   },
+   define: {
+    __BUILD_HASH__: JSON.stringify(Date.now().toString())
+  }
 })

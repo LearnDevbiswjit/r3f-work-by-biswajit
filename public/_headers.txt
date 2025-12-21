@@ -1,0 +1,11 @@
+/*
+  X-Content-Type-Options: nosniff
+
+/index.html
+  Cache-Control: no-store
+
+/assets/*
+  Cache-Control: public, max-age=86400, immutable
+
+/models/*
+  Cache-Control: public, max-age=604800, immutable
