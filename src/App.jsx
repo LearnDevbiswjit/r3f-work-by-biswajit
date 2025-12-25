@@ -5,7 +5,7 @@ import { Canvas } from '@react-three/fiber'
 import { SheetProvider } from '@theatre/r3f'
 import { getProject } from '@theatre/core'
 import { Leva } from 'leva'
-
+ 
 import Enveremnt from './Enveremnt.jsx'
 import theatreStateBundled from './assets/theatreState.json'
 import { store } from './store/store'

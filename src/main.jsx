@@ -1,7 +1,11 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import App from './App'
-import './app.css'
+
+import App from './App.jsx'
+import './App.css'
+
+
+ 
 
 // ✅ Service Worker ONLY in production
 if (
