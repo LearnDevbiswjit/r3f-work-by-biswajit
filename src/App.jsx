@@ -96,9 +96,19 @@ function TimelineBootstrap() {
    MAIN APP
    ========================================================= */
 export default function App() {
-  useEffect(() => {
+  
+
+
+   useEffect(() => {
+    // disable browser scroll restoration
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual'
+    }
+
+    // force scroll to top
     window.scrollTo(0, 0)
   }, [])
+
 
   return (
     <Provider store={store}>
