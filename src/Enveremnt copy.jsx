@@ -316,7 +316,7 @@ export default function Enveremnt () {
         />
       </e.mesh>
       <hemisphereLight args={['#cfe7ff', '#6b4f5f', 0.15]} />
-      <directionalLight position={[30, 40, 10]} intensity={0.75} />
+      <directionalLight position={[30, 40, 10]} intensity={1} />
 
       <ambientLight intensity={1} />
       <e.group theatreKey='under-water-maoutain-side' position={[0, 0, 1]}>

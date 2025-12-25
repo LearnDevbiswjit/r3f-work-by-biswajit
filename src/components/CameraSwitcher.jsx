@@ -14,7 +14,7 @@ import * as THREE from 'three';
   - Preserve transform on swap to avoid jump.
 */
 
-export default function CameraSwitcher({ theatreKey = 'Camera', fov = 65, near = 0.1, far = 6000 }) {
+export default function CameraSwitcher({ theatreKey = 'Camera', fov = 55, near = 0.1, far = 6000 }) {
   const mode = useSelector(s => s.camera.mode); // 'theatre' | 'helix'
   const three = useThree();
   const lastTransformRef = useRef({

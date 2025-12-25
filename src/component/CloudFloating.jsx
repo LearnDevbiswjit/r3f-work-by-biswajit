@@ -20,7 +20,7 @@ export default function CloudFloating({
   zSpread = 150,
   baseScale = 100,
   debug = false,
-  sharedNoise = { dir: [-1.0, 0.22] },
+  sharedNoise = { dir: [-2.0, 0.82] },
   perLayerWindVariance = 0.22,
   fixedStepHz = 60,
   maxSubSteps = 6,
@@ -200,10 +200,10 @@ export default function CloudFloating({
     }
 
     // ensure group stays at base position (no camera-comp influence)
-    if (groupRef.current && groupRef.current.userData.basePosition) {
-      const base = groupRef.current.userData.basePosition
-      groupRef.current.position.lerp(base, THREE.MathUtils.clamp(1 - Math.exp(-6 * safeDelta), 0, 1))
-    }
+    // if (groupRef.current && groupRef.current.userData.basePosition) {
+    //   const base = groupRef.current.userData.basePosition
+    //   groupRef.current.position.lerp(base, THREE.MathUtils.clamp(1 - Math.exp(-6 * safeDelta), 0, 1))
+    // }
 
     if (debug && Math.floor(stableTime) % 4 === 0) {
       const s = layers.slice(0, Math.min(6, layers.length)).map((L, idx) => {
@@ -214,7 +214,19 @@ export default function CloudFloating({
     }
 
     lastVelRef.current = localVelSmoothedRef.current
+
+
+    // ✅ PATCH: make wind visible in world-space (VERY subtle)
+if (groupRef.current && offsetsRef.current[0]) {
+  const off = offsetsRef.current[0]
+
+  groupRef.current.position.x += off.x * 0.0018
+  groupRef.current.position.y += off.y * 0.0012
+}
+
+
   })
+
 
   return (
     <group ref={groupRef} position={position}>

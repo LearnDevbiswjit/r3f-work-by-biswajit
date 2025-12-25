@@ -7,7 +7,7 @@ export default function ScrollMapper({ pxPerSec = 10, smoothing = 0.25 }) {
   const durations = useSelector(s => s.timeline.durations)
 
   const target = useRef(0)
-  const current = useRef(0)
+  const current = useRef(0) 
   const raf = useRef(null)
 
   useEffect(() => {

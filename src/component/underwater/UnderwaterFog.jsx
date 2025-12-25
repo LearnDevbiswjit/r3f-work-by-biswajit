@@ -1,5 +1,5 @@
 // UnderwaterFog.jsx
-import * as THREE from 'three'
+import * as THREE from 'three' 
 import { useEffect, useMemo } from 'react'
 import { useFrame, useThree } from '@react-three/fiber' 
  

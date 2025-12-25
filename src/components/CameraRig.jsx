@@ -7,17 +7,18 @@ import { useControls } from 'leva'
 import Briks from './Briks'
 import HelixLine from './HelixLine'
 
-// ---------- Leva toggle ----------
 const isMobile =
   typeof window !== 'undefined' &&
   /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+
 const ENABLE_LEVA = !isMobile && process.env.NODE_ENV !== 'production'
 
-// ---------- Rotation range (SCROLL BASED) ----------
-const HELIX_ROT_X_START = 20   // path start
-const HELIX_ROT_X_END = 40     // path end
+const HELIX_ROT_X_START = 20
+const HELIX_ROT_X_END = 40
 
-// ---------- Locked defaults ----------
+const MAX_CURSOR_YAW = THREE.MathUtils.degToRad(6)
+const MAX_CURSOR_PITCH = THREE.MathUtils.degToRad(4)
+
 const CAMERA_DEFAULTS = {
   camOffsetX: -2,
   camOffsetY: 2.5,
@@ -39,14 +40,10 @@ const CAMERA_DEFAULTS = {
   lineRadius: 0.04,
 
   showBriks: true,
-  briksScale: 1,
-
-  initialYawDeg: 90,
-  startFlip: false
+  briksScale: 1
 }
 
-// ---------- Utils ----------
-function makeHelixPoints({ turns = 0.95, height = 40, radius = 25, points = 2000 }) {
+function makeHelixPoints({ turns = 0.95, height = 40, radius = 45, points = 2000 }) {
   const arr = []
   for (let i = 0; i <= points; i++) {
     const t = i / points
@@ -79,7 +76,7 @@ function buildArcLengthLUT(curve, samples = 1000) {
 }
 
 function mapArcToU(lut, arcNorm) {
-  const sTarget = THREE.MathUtils.clamp(arcNorm, 0, 1) * lut.totalLength
+  const sTarget = arcNorm * lut.totalLength
   let lo = 0, hi = lut.sSamples.length - 1
   while (lo <= hi) {
     const mid = (lo + hi) >> 1
@@ -93,10 +90,9 @@ function mapArcToU(lut, arcNorm) {
   return u0 + (u1 - u0) * t
 }
 
-// ---------- Component ----------
 export default function CameraRig({
-  initialHelixConfig = { turns: 0.95, height: 10, radius: 7, points: 2000 },
-  lutSamples = 1200
+  initialHelixConfig = { turns: 0.75, height: 25, radius: 20, points: 1500 },
+  lutSamples = 1000
 }) {
   const { camera } = useThree()
   const registry = useRegistry()
@@ -107,32 +103,7 @@ export default function CameraRig({
 
   let controls = CAMERA_DEFAULTS
   if (ENABLE_LEVA) {
-    controls = useControls('Camera (Helix)', {
-      camOffsetX: { value: CAMERA_DEFAULTS.camOffsetX },
-      camOffsetY: { value: CAMERA_DEFAULTS.camOffsetY },
-      camOffsetZ: { value: CAMERA_DEFAULTS.camOffsetZ },
-
-      camRotDegY: { value: CAMERA_DEFAULTS.camRotDegY },
-      camRotDegZ: { value: CAMERA_DEFAULTS.camRotDegZ },
-
-      useAbsoluteRotation: { value: CAMERA_DEFAULTS.useAbsoluteRotation },
-      camAbsRotX: { value: CAMERA_DEFAULTS.camAbsRotX },
-      camAbsRotY: { value: CAMERA_DEFAULTS.camAbsRotY },
-      camAbsRotZ: { value: CAMERA_DEFAULTS.camAbsRotZ },
-
-      tightFollowToggle: { value: CAMERA_DEFAULTS.tightFollowToggle },
-      lookAhead: { value: CAMERA_DEFAULTS.lookAhead },
-
-      showLine: { value: CAMERA_DEFAULTS.showLine },
-      lineColor: { value: CAMERA_DEFAULTS.lineColor },
-      lineRadius: { value: CAMERA_DEFAULTS.lineRadius },
-
-      showBriks: { value: CAMERA_DEFAULTS.showBriks },
-      briksScale: { value: CAMERA_DEFAULTS.briksScale },
-
-      initialYawDeg: { value: CAMERA_DEFAULTS.initialYawDeg },
-      startFlip: { value: CAMERA_DEFAULTS.startFlip }
-    })
+    controls = useControls('Camera (Helix)', CAMERA_DEFAULTS)
   }
 
   const {
@@ -141,12 +112,11 @@ export default function CameraRig({
     useAbsoluteRotation, camAbsRotX, camAbsRotY, camAbsRotZ,
     tightFollowToggle, lookAhead,
     showLine, lineColor, lineRadius,
-    showBriks, briksScale,
-    initialYawDeg, startFlip
+    showBriks, briksScale
   } = controls
 
-  const curveRef = useRef(null)
-  const lutRef = useRef(null)
+  const curveRef = useRef()
+  const lutRef = useRef()
   const ptsRef = useRef([])
   const bricksPtsRef = useRef([])
 
@@ -156,8 +126,20 @@ export default function CameraRig({
     bricksPtsRef.current = pts.map(p => p.clone())
     curveRef.current = new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.5)
     lutRef.current = buildArcLengthLUT(curveRef.current, lutSamples)
-
     registry.setCameraRef({ camera })
+  }, [])
+
+  const mouse = useRef({ x: 0, y: 0 })
+  const cursorQuatSmooth = useRef(new THREE.Quaternion())
+
+  useEffect(() => {
+    if (isMobile) return
+    const onMove = e => {
+      mouse.current.x = THREE.MathUtils.clamp((e.clientX / window.innerWidth) * 2 - 1, -1, 1)
+      mouse.current.y = THREE.MathUtils.clamp((e.clientY / window.innerHeight) * 2 - 1, -1, 1)
+    }
+    window.addEventListener('mousemove', onMove)
+    return () => window.removeEventListener('mousemove', onMove)
   }, [])
 
   const overallToHelixLocal = (overall, d) => {
@@ -171,7 +153,7 @@ export default function CameraRig({
 
   useFrame((_, dt) => {
     if (!curveRef.current || !lutRef.current) return
-    if (camState.locked) return
+    if (camState.locked || window.__INTRO_PLAYING__) return
 
     let arcNorm =
       camState.mode === 'helix'
@@ -180,7 +162,6 @@ export default function CameraRig({
 
     arcNorm = THREE.MathUtils.clamp(arcNorm, 0, 1)
 
-    // 🔥 SCROLL BASED ROTATION
     const camRotDegX = THREE.MathUtils.lerp(
       HELIX_ROT_X_START,
       HELIX_ROT_X_END,
@@ -199,8 +180,7 @@ export default function CameraRig({
       .addScaledVector(upLocal, camOffsetY)
       .addScaledVector(tan, camOffsetZ)
 
-    if (tightFollowToggle) camera.position.copy(desiredPos)
-    else camera.position.lerp(desiredPos, 1 - Math.exp(-6 * dt))
+    camera.position.copy(desiredPos)
 
     const lookTarget = p.clone().addScaledVector(tan, lookAhead)
     const m = new THREE.Matrix4().lookAt(camera.position, lookTarget, up)
@@ -215,17 +195,20 @@ export default function CameraRig({
       )
     )
 
-    const qAbs = new THREE.Quaternion().setFromEuler(
-      new THREE.Euler(
-        THREE.MathUtils.degToRad(camAbsRotX),
-        THREE.MathUtils.degToRad(camAbsRotY),
-        THREE.MathUtils.degToRad(camAbsRotZ),
-        'YXZ'
-      )
+    const targetYaw = -mouse.current.x * MAX_CURSOR_YAW
+    const targetPitch = -mouse.current.y * MAX_CURSOR_PITCH
+
+    const cursorQuat = new THREE.Quaternion().setFromEuler(
+      new THREE.Euler(targetPitch, targetYaw, 0, 'YXZ')
     )
 
-    if (useAbsoluteRotation) camera.quaternion.copy(qAbs)
-    else camera.quaternion.copy(qLook.multiply(qExtra).multiply(qAbs))
+    cursorQuatSmooth.current.slerp(cursorQuat, 1 - Math.exp(-10 * dt))
+
+    camera.quaternion.copy(
+      qLook
+        .multiply(qExtra)
+        .multiply(cursorQuatSmooth.current)
+    )
 
     camera.updateMatrixWorld()
   })
