@@ -2,7 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 
 import App from './App.jsx'
-import './app.css'
+import './index.css'
 
 // ✅ Service Worker ONLY in production
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
