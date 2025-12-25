@@ -990,10 +990,6 @@ canvas {
   background:transparent;
 }
 
-.leva-ui {
-  z-index: 99999 !important;
-}
-
 /* Responsive fixes */
 
 @media (max-width: 768px) {
