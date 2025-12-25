@@ -29,7 +29,7 @@ import CloudFloating from './component/CloudFloating'
 import TextBoxUnderWater from './component/underwater/TextBoxUnderWater'
 import CloudeGradiantShader from './component/CloudeGradiantShader'
 import RockStone from './rock/RockStone'
-import BlenderPathDebug from './upperWater/BlenderPathDebug'
+// import BlenderPathDebug from './upperWater/BlenderPathDebug'
 import { useEnvironmentGate } from './loader/EnvironmentGate'
 import BlenderPathWithBox from './upperWater/BlenderPathWithBox'
 
@@ -225,10 +225,10 @@ export default function Enveremnt () {
         <ConchShell scale={50} />
       </e.group>
 
-      <e.group theatreKey='FishMain'>
+      {/* <e.group theatreKey='FishMain'>
         <Fish scale={100} />
         <BlenderPathDebug color='#00ffcc' width={3} />
-      </e.group>
+      </e.group> */}
 
       <gridHelper args={[100, 20]} />
       <axesHelper args={[50]} />
