@@ -31,7 +31,7 @@ import CloudeGradiantShader from './component/CloudeGradiantShader'
 import RockStone from './rock/RockStone'
 // import BlenderPathDebug from './upperWater/BlenderPathDebug'
 import { useEnvironmentGate } from './loader/EnvironmentGate'
-import BlenderPathWithBox from './upperWater/BlenderPathWithBox'
+// import BlenderPathWithBox from './upperWater/BlenderPathWithBox'
 
 // import VolumetricFogBubble from './component/underwater/VolumetricFogBubble'
 // import PostProcessingUnderwater from './component/underwater/PostProcessingUnderwater'
@@ -233,7 +233,7 @@ export default function Enveremnt () {
       <gridHelper args={[100, 20]} />
       <axesHelper args={[50]} />
 
-      <e.group
+      {/* <e.group
         theatreKey='FishPathRoot'
         position={[0, 0, 0]}
         rotation={[0, 0, 0]}
@@ -243,7 +243,7 @@ export default function Enveremnt () {
           pathColor='#00ff66' // 🟢 blender path color
           boxColor='yellow' // 🟨 follower
         />
-      </e.group>
+      </e.group> */}
 
       <e.group theatreKey='SkyPlane'>
         <ImagePlane url='./sky.png' position={[0, 0, -5]} />
