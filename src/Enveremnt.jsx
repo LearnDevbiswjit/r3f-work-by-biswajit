@@ -275,32 +275,44 @@ export default function Enveremnt () {
           radius={1000}
           topColor='#4D2E69'
           bottomColor='#2E264C'
-          onlyWhenUnderwater={false}
+          onlyWhenUnderwater={true}
         />
       </e.group>
       <e.group theatreKey='SandSurface'>
         <SandSurface textureUrl={sandUrl} size={3000} />
       </e.group>
 
-      <e.group theatreKey='CausticsLightProjector'>
+      {/* <e.group theatreKey='CausticsLightProjector'>
         <CausticsLightProjector
           src={videoUrl}
           target={[0, 0, 0]}
           fitRect={[9000, 9000]}
           intensity={50}
         />
-      </e.group>
+      </e.group> */}
 
       {/* <VolumetricFogBubble/>
  <PostProcessingUnderwater/> */}
       <UnderwaterFog
         waterY={0}
         surfaceColor='#E8C5D2'
-        surfaceDensity={0.00049}
+        surfaceDensity={0.00009}
         underColor='#7E66A4'
         underDensity={0.003}
-        blendMeters={9}
+        blendMeters={30}
       />
+
+      {/* <e.mesh
+        rotation={[0, 0, Math.PI / 4]}
+        theatreKey='ShaderSingleBeam_C'
+        position={[-607, -23, 1368]}
+      >
+        <ShaderSingleBeam
+          position={[30, -310, -380]}
+          rotation={[THREE.MathUtils.degToRad(-6), 0, 2.5]}
+          seedOffset={100}
+        />
+      </e.mesh> */}
     </group>
   )
 }

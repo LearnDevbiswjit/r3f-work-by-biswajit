@@ -676,6 +676,10 @@ video {
   max-width: 60%;
 }
 
+.max-w-\[90\%\] {
+  max-width: 90%;
+}
+
 .max-w-lg {
   max-width: 32rem;
 }
@@ -798,6 +802,10 @@ video {
   text-align: center;
 }
 
+.font-anton {
+  font-family: Anton, system-ui;
+}
+
 .text-\[clamp\(100px\2c 28vw\2c 320px\)\] {
   font-size: clamp(100px,28vw,320px);
 }
@@ -894,6 +902,11 @@ video {
   color: rgb(0 0 0 / var(--tw-text-opacity, 1));
 }
 
+.text-purple-300 {
+  --tw-text-opacity: 1;
+  color: rgb(216 180 254 / var(--tw-text-opacity, 1));
+}
+
 .text-white {
   --tw-text-opacity: 1;
   color: rgb(255 255 255 / var(--tw-text-opacity, 1));
@@ -939,58 +952,44 @@ video {
   transition-duration: 300ms;
 }
 
-/* Overlay sections background images */
-
-.section-0 {
-  background-image: url("/assets/section0.png");
-}
-
-/* src/index.css */
-
-/* basic styles required for ScrollSmoother setup */
-
-html, body, #root {
-  height: 100%;
-  width: 100%;
-  margin: 0;
-  padding: 0;
-  overscroll-behavior: none;
-  -webkit-overflow-scrolling: touch;
-  background: #000;
-  color: #fff;
-}
+/* GSAP ScrollSmoother */
 
 #smooth-wrapper {
   position: relative;
-  height: 100vh;
+  /* ✅ IMPORTANT FIX */
+  height: 100dvh;
+  min-height: 100dvh;
   width: 100%;
   overflow: hidden;
-  /* required by ScrollSmoother */
+  background: #000;
 }
 
 #smooth-content {
-  min-height: 100vh;
+  min-height: 100dvh;
   width: 100%;
+  background: #000;
 }
 
-/* ensure the fixed overlay stays above everything */
+/* Prevent mobile bottom white flash */
 
-.z-40 {
-  z-index: 40;
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: #000;
+  z-index: -1;
 }
 
-html, body, #root {
-  height:100%;
-  margin:0;
-  background:transparent;
+/* Safe-area (Android + iOS) */
+
+@supports (padding: env(safe-area-inset-bottom)) {
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+    background: #000;
+  }
 }
 
-canvas {
-  display:block;
-  background:transparent;
-}
-
-/* Responsive fixes */
+/* Responsive text */
 
 @media (max-width: 768px) {
   .section-0 .headline,
@@ -1007,3 +1006,35 @@ canvas {
     font-size: clamp(2rem, 8vw, 3.5rem) !important;
   }
 }
+
+/* ---------------- Google Fonts ---------------- */
+
+/* ---------------- Local Font ---------------- */
+
+@font-face {
+  font-family: 'Aladin';
+
+  src: url('/fonts/Aladin-Regular.ttf') format('truetype');
+
+  font-weight: 400;
+
+  font-style: normal;
+
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Anton';
+
+  src: url('/fonts/Anton-Regular.ttf') format('truetype');
+
+  font-weight: 400;
+
+  font-style: normal;
+
+  font-display: swap;
+}
+
+/* ---------------- Base ---------------- */
+
+/* ---------------- Utilities ---------------- */

@@ -2,98 +2,71 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ---------------- Google Fonts ---------------- */
 @import url('https://fonts.googleapis.com/css2?family=Orelega+One&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Aladin&display=swap');
 
-
-
-@layer components {
-  .headingText {
-    @apply font-semibold text-5xl leading-normal;
-  }
-
-  .headingSmall {
-    @apply text-6xl fontFmly;
-  }
-
-  .headingBig {
-    @apply text-9xl fontFmly;
-  }
-
-  .headingBig1 {
-    @apply text-9xl fontFmly;
-  }
-
-  .headingBig2 {
-    @apply text-7xl fontFmly;
-  }
-
-
+/* ---------------- Local Font ---------------- */
+@font-face {
+  font-family: 'Aladin';
+  src: url('/fonts/Aladin-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
 }
-
-
-
-@layer utilities { 
-  /* Overlay sections background images */
-  .section-0 {
-    background-image: url("/assets/section0.png");
-  }
-  .section-1 {
-    background-image: url("/assets/section1.png");
-  }
-  .section-2 {
-    background-image: url("/assets/section2.png");
-  }
-  .section-3 {
-    background-image: url("/assets/section3.png");
-  }
-
-
-
-
-
-/* src/index.css */
-/* basic styles required for ScrollSmoother setup */
-html, body, #root {
-  height: 100%;
-  width: 100%;
-  margin: 0;
-  padding: 0;
-  overscroll-behavior: none;
-  -webkit-overflow-scrolling: touch;
-  background: #000;
-  color: #fff;
+@font-face {
+  font-family: 'Anton';
+  src: url('/fonts/Anton-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
 }
-
-#smooth-wrapper {
-  position: relative;
-  height: 100vh;
-  width: 100%;
-  overflow: hidden; /* required by ScrollSmoother */
-}
-
-#smooth-content {
-  min-height: 100vh;
-  width: 100%;
-}
-
-/* ensure the fixed overlay stays above everything */
-.z-40 {
-  z-index: 40;
-}
+/* ---------------- Base ---------------- */
  
 
-html, body, #root { height:100%; margin:0; background:transparent; }
-canvas { display:block; background:transparent; }
+/* ---------------- Utilities ---------------- */
+@layer utilities {
+  /* GSAP ScrollSmoother */
+  #smooth-wrapper {
+    position: relative;
 
-.leva-ui { z-index: 99999 !important; }
+    /* ✅ IMPORTANT FIX */
+    height: 100dvh;
+    min-height: 100dvh;
 
+    width: 100%;
+    overflow: hidden;
+    background: #000;
+  }
 
+  #smooth-content {
+    min-height: 100dvh;
+    width: 100%;
+    background: #000;
+  }
 
+  .leva-ui {
+    z-index: 99999 !important;
+  }
 
+  /* Prevent mobile bottom white flash */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: #000;
+    z-index: -1;
+  }
 
+  /* Safe-area (Android + iOS) */
+  @supports (padding: env(safe-area-inset-bottom)) {
+    body {
+      padding-bottom: env(safe-area-inset-bottom);
+      background: #000;
+    }
+  }
 
-
-  /* Responsive fixes */
+  /* Responsive text */
   @media (max-width: 768px) {
     .section-0 .headline,
     .section-1 .headline,

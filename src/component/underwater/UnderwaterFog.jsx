@@ -3,7 +3,7 @@ import * as THREE from 'three'
 import { useEffect, useMemo } from 'react'
 import { useFrame, useThree } from '@react-three/fiber' 
  
-export default function UnderwaterFog({
+export default function UnderwaterFog({ 
   waterY = 0,
   // surface (what you already use in WaterScene)
   surfaceColor = '#4D2E69',

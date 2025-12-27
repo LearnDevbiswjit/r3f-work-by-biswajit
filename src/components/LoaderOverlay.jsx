@@ -64,7 +64,7 @@ export default function LoaderOverlay() {
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 9999,
-        fontSize: 22
+        fontSize: 16
       }}
     >
       Loading {progress}%

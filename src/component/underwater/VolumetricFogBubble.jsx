@@ -39,8 +39,8 @@ void main() {
 }
 `
 
-export default function VolumetricFogBubble({ 
-  clearRadius = 1000,
+export default function VolumetricFogBubble({  
+  clearRadius = 1000, 
   fogRadius = 3000,
   color = '#2E264C',
   opacity = 1.0,

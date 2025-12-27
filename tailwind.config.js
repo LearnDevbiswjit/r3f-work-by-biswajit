@@ -1,3 +1,4 @@
+//tailwind.config.js
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
@@ -8,8 +9,9 @@ export default {
   theme: {   
     extend: {          
        fontFamily: {
-        FontlyA: ["'Berkshire Swash', cursive;"],
-       },
+        aladin: ['Aladin', 'system-ui'],
+        anton: ['Anton', 'system-ui'],
+      },
       
     }, 
       container: {

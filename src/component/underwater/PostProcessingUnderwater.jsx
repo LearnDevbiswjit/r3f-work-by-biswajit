@@ -8,9 +8,9 @@ import {
 } from '@react-three/postprocessing'
 import { useRef } from 'react'
 
-export default function PostProcessingUnderwater({
+export default function PostProcessingUnderwater({  
   enabledY = 0,
-}) {
+}) { 
   const { camera } = useThree()
   const composerRef = useRef()
 

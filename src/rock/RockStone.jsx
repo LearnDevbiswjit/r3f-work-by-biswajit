@@ -12,22 +12,22 @@ export default function RockStone(props) {
   const { nodes, materials } = useGLTF('/models/Rock-Product-New-5.glb')
 
   /* ---------- texture / material (unchanged) ---------- */
-  const rockTex = useTexture('/textures/rock-texture.jpg')
-  useMemo(() => {
-    rockTex.wrapS = rockTex.wrapT = THREE.RepeatWrapping
-    rockTex.repeat.set(2, 2)
-  }, [rockTex])
+  // const rockTex = useTexture('/textures/rock-texture.jpg')
+  // useMemo(() => {
+  //   rockTex.wrapS = rockTex.wrapT = THREE.RepeatWrapping
+  //   rockTex.repeat.set(2, 2)
+  // }, [rockTex])
 
-  const rockMaterial = useMemo(
-    () =>
-      new THREE.MeshStandardMaterial({
-        map: rockTex,
-        roughness: 1,
-        metalness: 0.1,
-        displacementScale: 0.05,
-      }),
-    [rockTex]
-  )
+  // const rockMaterial = useMemo(
+  //   () =>
+  //     new THREE.MeshStandardMaterial({
+  //       map: rockTex,
+  //       roughness: 1,
+  //       metalness: 0.1,
+  //       displacementScale: 0.05,
+  //     }),
+  //   [rockTex]
+  // )
 
   /* ---------- CENTER PIVOT FIX ---------- */
   useLayoutEffect(() => {
