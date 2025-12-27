@@ -23,6 +23,7 @@ import TimelineWhiteFade from './components/TimelineWhiteFade'
 import { EnvironmentGateProvider } from './loader/EnvironmentGate.jsx'
 import LoaderOverlay from './components/LoaderOverlay.jsx'
 
+
 const isMobile =
   typeof window !== 'undefined' &&
   /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
@@ -120,7 +121,7 @@ export default function App() {
         <TimelineBootstrap />
         <ScrollMapper pxPerSec={5} />
 
-        <TimelineWhiteFade triggerAtSec={600} fadeDuration={1.5} />
+        <TimelineWhiteFade triggerAtSec={600} fadeDuration={2} />
 
         <EnvironmentGateProvider>
           <LoaderOverlay />

@@ -37,6 +37,10 @@ import { useEnvironmentGate } from './loader/EnvironmentGate'
 // import PostProcessingUnderwater from './component/underwater/PostProcessingUnderwater'
 import UnderwaterFog from './component/underwater/UnderwaterFog'
 
+ import WaterTop from './component/WaterTop'
+ import WaterUnder from './component/WaterUnder'
+import UnderwaterVolume from './component/UnderwaterVolume'
+
 export default function Enveremnt () {
   const { reportReady } = useEnvironmentGate()
   const sentRef = useRef(false)
@@ -230,7 +234,7 @@ export default function Enveremnt () {
         <BlenderPathDebug color='#00ffcc' width={3} />
       </e.group> */}
 
-      <gridHelper args={[100, 20]} />
+      {/* <gridHelper args={[100, 20]} /> */}
       <axesHelper args={[50]} />
 
       {/* <e.group
@@ -298,21 +302,33 @@ export default function Enveremnt () {
         surfaceColor='#E8C5D2'
         surfaceDensity={0.00009}
         underColor='#7E66A4'
-        underDensity={0.003}
+        underDensity={0.001}
         blendMeters={30}
       />
 
-      {/* <e.mesh
-        rotation={[0, 0, Math.PI / 4]}
-        theatreKey='ShaderSingleBeam_C'
-        position={[-607, -23, 1368]}
-      >
+      <e.mesh theatreKey='ShaderSingleBeam_A'>
         <ShaderSingleBeam
-          position={[30, -310, -380]}
           rotation={[THREE.MathUtils.degToRad(-6), 0, 2.5]}
           seedOffset={100}
         />
-      </e.mesh> */}
+      </e.mesh>
+
+      <e.mesh theatreKey='ShaderSingleBeam_B'>
+        <ShaderSingleBeam
+          rotation={[THREE.MathUtils.degToRad(-6), 0, 2.5]}
+          seedOffset={100}
+        />
+      </e.mesh>
+
+      <e.mesh theatreKey='ShaderSingleBeam_C'>
+        <ShaderSingleBeam seedOffset={100} />
+      </e.mesh>
+
+ 
+{/* <WaterTop waterY={0} />
+      <WaterUnder waterY={0} />
+      <UnderwaterVolume waterY={0} /> */}
+
     </group>
   )
 }

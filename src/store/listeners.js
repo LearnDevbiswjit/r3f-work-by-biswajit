@@ -9,7 +9,7 @@ import {
   setLastCommand
 } from './slices/cameraSlice'
 
-const THEATRE_A_SCROLL_SPEED = 1.6
+const THEATRE_A_SCROLL_SPEED = 1.2
 const END_EPS = 0.999
 
 export const listenerMiddleware = createListenerMiddleware()

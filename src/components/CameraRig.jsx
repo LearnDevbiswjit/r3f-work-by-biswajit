@@ -1,17 +1,24 @@
+// CameraRig.jsx — Helix damping controlled by ONE variable (NO Leva)
+
 import React, { useRef, useEffect } from 'react'
 import * as THREE from 'three'
 import { useFrame, useThree } from '@react-three/fiber'
 import { useSelector } from 'react-redux'
 import { useRegistry } from '../registry/TimelineRegistryContext'
-import { useControls } from 'leva'
 import Briks from './Briks'
 import HelixLine from './HelixLine'
+
+/* =========================================================
+   🔧 HELIX DAMPING CONTROL (CHANGE ONLY THIS VALUE)
+   ---------------------------------------------------------
+   Bigger value  = more smooth / slow follow
+   Smaller value = tighter / faster follow
+   ========================================================= */
+const HELIX_DAMPING = 3
 
 const isMobile =
   typeof window !== 'undefined' &&
   /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
-
-const ENABLE_LEVA = !isMobile && process.env.NODE_ENV !== 'production'
 
 const HELIX_ROT_X_START = 20
 const HELIX_ROT_X_END = 40
@@ -27,12 +34,7 @@ const CAMERA_DEFAULTS = {
   camRotDegY: -16,
   camRotDegZ: -10,
 
-  useAbsoluteRotation: false,
-  camAbsRotX: -7.5,
-  camAbsRotY: 0,
-  camAbsRotZ: 0,
-
-  tightFollowToggle: true,
+  tightFollowToggle: false,
   lookAhead: 2,
 
   showLine: true,
@@ -101,19 +103,13 @@ export default function CameraRig({
   const timelineOverall = useSelector(s => s.timeline.overallProgress)
   const durations = useSelector(s => s.timeline.durations)
 
-  let controls = CAMERA_DEFAULTS
-  if (ENABLE_LEVA) {
-    controls = useControls('Camera (Helix)', CAMERA_DEFAULTS)
-  }
-
   const {
     camOffsetX, camOffsetY, camOffsetZ,
     camRotDegY, camRotDegZ,
-    useAbsoluteRotation, camAbsRotX, camAbsRotY, camAbsRotZ,
     tightFollowToggle, lookAhead,
     showLine, lineColor, lineRadius,
     showBriks, briksScale
-  } = controls
+  } = CAMERA_DEFAULTS
 
   const curveRef = useRef()
   const lutRef = useRef()
@@ -141,6 +137,9 @@ export default function CameraRig({
     window.addEventListener('mousemove', onMove)
     return () => window.removeEventListener('mousemove', onMove)
   }, [])
+
+  const desiredPos = useRef(new THREE.Vector3())
+  const desiredQuat = useRef(new THREE.Quaternion())
 
   const overallToHelixLocal = (overall, d) => {
     const total = (d.theatreA || 0) + (d.helix || 0) + (d.theatreB || 0)
@@ -175,15 +174,13 @@ export default function CameraRig({
     const right = new THREE.Vector3().crossVectors(tan, up).normalize()
     const upLocal = new THREE.Vector3().crossVectors(right, tan).normalize()
 
-    const desiredPos = p.clone()
+    desiredPos.current.copy(p)
       .addScaledVector(right, camOffsetX)
       .addScaledVector(upLocal, camOffsetY)
       .addScaledVector(tan, camOffsetZ)
 
-    camera.position.copy(desiredPos)
-
     const lookTarget = p.clone().addScaledVector(tan, lookAhead)
-    const m = new THREE.Matrix4().lookAt(camera.position, lookTarget, up)
+    const m = new THREE.Matrix4().lookAt(desiredPos.current, lookTarget, up)
     const qLook = new THREE.Quaternion().setFromRotationMatrix(m)
 
     const qExtra = new THREE.Quaternion().setFromEuler(
@@ -197,19 +194,23 @@ export default function CameraRig({
 
     const targetYaw = -mouse.current.x * MAX_CURSOR_YAW
     const targetPitch = -mouse.current.y * MAX_CURSOR_PITCH
-
     const cursorQuat = new THREE.Quaternion().setFromEuler(
       new THREE.Euler(targetPitch, targetYaw, 0, 'YXZ')
     )
 
     cursorQuatSmooth.current.slerp(cursorQuat, 1 - Math.exp(-10 * dt))
 
-    camera.quaternion.copy(
-      qLook
-        .multiply(qExtra)
-        .multiply(cursorQuatSmooth.current)
-    )
+    desiredQuat.current
+      .copy(qLook)
+      .multiply(qExtra)
+      .multiply(cursorQuatSmooth.current)
 
+    const alpha = tightFollowToggle
+      ? 1
+      : (1 - Math.exp(-HELIX_DAMPING * dt))
+
+    camera.position.lerp(desiredPos.current, alpha)
+    camera.quaternion.slerp(desiredQuat.current, alpha)
     camera.updateMatrixWorld()
   })
 

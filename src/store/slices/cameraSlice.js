@@ -5,7 +5,7 @@ const initialState = {
   mode: 'theatre', // 'theatre' | 'helix' — determines which controller acts
   progress: 0,     // 0..1 used in helix
   offset: { x: 0, y: 0, z: 0 },
-  damping: 0.0002,
+  damping: 0.0025,
   tightFollow: true,
   locked: false,
   lastCommand: null,

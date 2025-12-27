@@ -186,7 +186,7 @@ const SingleBeamMaterial = shaderMaterial(
   {
     uTime: 0,
     uColor: new THREE.Color('#7b2aa4'),
-    uIntensity: 0.32,
+    uIntensity: 0.52,
 
     uAngle: 0.0,
 
@@ -244,13 +244,13 @@ extend({ SingleBeamMaterial })
 
 export default function ShaderSingleBeam({ 
   // plane size in world units
-  size = [220, 120],
-  slices = 15,
-  gap = 3,
+  size = [2000, 820],
+  slices = 6,
+  gap = 12,
 
   // base color & energy
-  color = '#7b2aa4',
-  intensity = 0.22,
+  color = '#430462',
+  intensity = 0.2,
 
   // time scale (global animation speed)
   timeScale = 0.5,
