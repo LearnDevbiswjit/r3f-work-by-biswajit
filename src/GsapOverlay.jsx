@@ -9,8 +9,8 @@ export default function GsapOverlay() {
   const sectionsConfig = [
     { start: 0.0, end: 0.04, duration: 0.9, stagger: 0.015, hideDuration: 0.25 },
     { start: 0.11, end: 0.35, duration: 0.85, stagger: 0.012, hideDuration: 0.18 },
-    { start: 0.45, end: 0.65, duration: 0.85, stagger: 0.012, hideDuration: 0.18 },
-    { start: 0.7, end: 1.2, duration: 0.95, stagger: 0.015, hideDuration: 0.18 }
+    { start: 0.50, end: 0.60, duration: 0.85, stagger: 0.012, hideDuration: 0.18 },
+    { start: 0.66, end: 0.75, duration: 0.95, stagger: 0.015, hideDuration: 0.18 }
   ];
 
   const SECTION_COUNT = sectionsConfig.length;

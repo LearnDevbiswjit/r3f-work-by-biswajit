@@ -3,15 +3,15 @@ import React, { useEffect, useState, Suspense } from 'react'
 import { Provider } from 'react-redux'
 import { Canvas } from '@react-three/fiber'
 import { SheetProvider } from '@theatre/r3f'
-import { PerspectiveCamera as TheatrePerspectiveCamera } from '@theatre/r3f'
 import { getProject } from '@theatre/core'
 import { Leva } from 'leva'
-
+ 
 import Enveremnt from './Enveremnt.jsx'
 import theatreStateBundled from './assets/theatreState.json'
 import { store } from './store/store'
 import { RegistryProvider, useRegistry } from './registry/TimelineRegistryContext'
 import CameraRig from './components/CameraRig'
+import CameraSwitcher from './components/CameraSwitcher'
 import ScrollMapper from './components/ScrollMapper'
 import DebugScrubber from './components/DebugScrubber'
 import WaterScene from './components/WaterScene'
@@ -23,6 +23,7 @@ import TimelineWhiteFade from './components/TimelineWhiteFade'
 import { EnvironmentGateProvider } from './loader/EnvironmentGate.jsx'
 import LoaderOverlay from './components/LoaderOverlay.jsx'
 
+
 const isMobile =
   typeof window !== 'undefined' &&
   /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
@@ -30,6 +31,9 @@ const isMobile =
 const ENABLE_LEVA = !isMobile && process.env.NODE_ENV !== 'production'
 const ENABLE_STUDIO = process.env.NODE_ENV !== 'production'
 
+/* =========================================================
+   THEATRE PROJECT (OFFICIAL DEFAULT BEHAVIOUR)
+   ========================================================= */
 /* =========================================================
    THEATRE PROJECT — SINGLE SOURCE OF TRUTH
    ========================================================= */
@@ -46,15 +50,21 @@ if (typeof window !== 'undefined' && !window.__THEATRE_PROJECT__) {
   window.__THEATRE_SHEET__ = sheet
 }
 
+
 /* =========================================================
    SHEET PROVIDER
    ========================================================= */
 function SheetBinder({ children }) {
-  const [sheet, setSheet] = useState(() => window.__THEATRE_SHEET__ || null)
+  const [sheet, setSheet] = useState(
+    () => window.__THEATRE_SHEET__ || initialSheet
+  )
 
   useEffect(() => {
     const id = setInterval(() => {
-      if (window.__THEATRE_SHEET__ && window.__THEATRE_SHEET__ !== sheet) {
+      if (
+        window.__THEATRE_SHEET__ &&
+        window.__THEATRE_SHEET__ !== sheet
+      ) {
         setSheet(window.__THEATRE_SHEET__)
       }
     }, 200)
@@ -87,12 +97,19 @@ function TimelineBootstrap() {
    MAIN APP
    ========================================================= */
 export default function App() {
-  useEffect(() => {
+  
+
+
+   useEffect(() => {
+    // disable browser scroll restoration
     if ('scrollRestoration' in window.history) {
       window.history.scrollRestoration = 'manual'
     }
+
+    // force scroll to top
     window.scrollTo(0, 0)
   }, [])
+
 
   return (
     <Provider store={store}>
@@ -102,9 +119,9 @@ export default function App() {
         {ENABLE_STUDIO && <StudioManager />}
 
         <TimelineBootstrap />
-        <ScrollMapper pxPerSec={5} />
+        <ScrollMapper pxPerSec={3} />
 
-        <TimelineWhiteFade triggerAtSec={600} fadeDuration={1.5} />
+        <TimelineWhiteFade triggerAtSec={580} fadeDuration={2} />
 
         <EnvironmentGateProvider>
           <LoaderOverlay />
@@ -112,23 +129,12 @@ export default function App() {
 
           <Canvas style={{ position: 'fixed', inset: 0 }}>
             <SheetBinder>
-
-              {/* ✅ SINGLE CAMERA (THEATRE OWNED, NEVER SWITCHED) */}
-              <TheatrePerspectiveCamera
-                theatreKey="Camera"
-                makeDefault
-                fov={50}
-                near={0.1}
-                far={6000}
-              />
-
+              <CameraSwitcher theatreKey="Camera" />
               <CameraRig />
               <WaterScene />
-
               <Suspense fallback={null}>
                 <Enveremnt />
               </Suspense>
-
             </SheetBinder>
           </Canvas>
         </EnvironmentGateProvider>

@@ -274,28 +274,28 @@ export default function Enveremnt () {
       <e.pointLight theatreKey='LightBlue' position={[0, 0, 1]} />
       <e.pointLight theatreKey='LightBlue 2' position={[0, 0, 1]} />
    <e.pointLight theatreKey='Light-3' position={[0, 0, 1]} />
-      {/* <e.group theatreKey='UnderwaterSleeve' position={[0, 0, 1]}>
+      <e.group theatreKey='UnderwaterSleeve' position={[0, 0, 1]}>
         <UnderwaterSleeve
-          topY={-0.52}
+          topY={-0.50}
           depth={1000}
           radius={1000}
           topColor='#4D2E69'
           bottomColor='#2E264C'
           onlyWhenUnderwater={true}
         />
-      </e.group> */}
+      </e.group>
       <e.group theatreKey='SandSurface'>
         <SandSurface textureUrl={sandUrl} size={3000} />
       </e.group>
 
-      <e.group theatreKey='CausticsLightProjector'>
+      {/* <e.group theatreKey='CausticsLightProjector'>
         <CausticsLightProjector
           src={videoUrl}
           target={[0, 0, 0]}
           fitRect={[9000, 9000]}
           intensity={50}
         />
-      </e.group>
+      </e.group> */}
 
       {/* <VolumetricFogBubble/>
  <PostProcessingUnderwater/> */}
@@ -308,7 +308,7 @@ export default function Enveremnt () {
         blendMeters={30}
       />
 
-      <e.mesh theatreKey='ShaderSingleBeam_A'>
+      {/* <e.mesh theatreKey='ShaderSingleBeam_A'>
         <ShaderSingleBeam
           rotation={[THREE.MathUtils.degToRad(-6), 0, 2.5]}
           seedOffset={100}
@@ -324,12 +324,48 @@ export default function Enveremnt () {
 
       <e.mesh theatreKey='ShaderSingleBeam_C'>
         <ShaderSingleBeam seedOffset={100} />
-      </e.mesh>
+      </e.mesh> */}
 
  
 {/* <WaterTop waterY={0} />
       <WaterUnder waterY={0} />
       <UnderwaterVolume waterY={0} /> */}
+
+<e.group theatreKey='TextBoxUnderWater-1' position={[0, 0, 1]}>
+        <TextBoxUnderWater
+          startAt={5000} // এই কম্পোনেন্ট second এ শুরু করবে
+          duration={600} // 4 seconds-এর স্ক্রল পজিশনে পুরো growth হবে (0->1)
+         
+          title='Skin Health'
+          bullets={[
+            'Anti-aging, collagen production, reduces acne, hydrates skin and decreases excessive sebum oil in the skin.',
+            'Helps with severe skin conditions like eczema and psoriasis.'
+          ]}
+          bubbleSrc='/textures/bubble1.png'
+          position={[0, 0.8, 0]}
+          scale={20}
+        />
+      </e.group>
+
+      
+
+
+      <e.group theatreKey='TextBoxUnderWater-2' position={[0, 0, 1]}>
+        <TextBoxUnderWater
+          startAt={6000} // এই কম্পোনেন্ট second এ শুরু করবে
+          duration={600} // 4 seconds-এর স্ক্রল পজিশনে পুরো growth হবে (0->1)
+         
+          title='Skin Health'
+          bullets={[
+            'Anti-aging, collagen production, reduces acne, hydrates skin and decreases excessive sebum oil in the skin.',
+            'Helps with severe skin conditions like eczema and psoriasis.'
+          ]}
+          bubbleSrc='/textures/bubble1.png'
+          position={[0, 0.8, 0]}
+          scale={20}
+        />
+      </e.group>
+
 
     </group>
   )

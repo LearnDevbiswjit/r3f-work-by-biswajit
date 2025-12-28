@@ -1,28 +1,18 @@
-// CameraRig.jsx — SINGLE CAMERA CONTROLLER (HELIX ONLY + LEVA)
+// CameraRig.jsx — SINGLE CAMERA CONTROLLER (HELIX ONLY)
 
 import React, { useRef, useEffect } from 'react'
 import * as THREE from 'three'
 import { useFrame, useThree } from '@react-three/fiber'
 import { useSelector } from 'react-redux'
 import { useRegistry } from '../registry/TimelineRegistryContext'
-import { useControls } from 'leva'
 import Briks from './Briks'
 import HelixLine from './HelixLine'
 
-/* =========================================================
-   DEVICE / LEVA FLAGS
-   ========================================================= */
+const HELIX_DAMPING = 3
+
 const isMobile =
   typeof window !== 'undefined' &&
   /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
-
-const ENABLE_LEVA = !isMobile && process.env.NODE_ENV !== 'production'
-
-/* =========================================================
-   HELIX TUNING
-   ========================================================= */
-const HELIX_DAMPING_DESKTOP = 3
-const HELIX_DAMPING_MOBILE = 6
 
 const HELIX_ROT_X_START = 20
 const HELIX_ROT_X_END = 40
@@ -30,31 +20,21 @@ const HELIX_ROT_X_END = 40
 const MAX_CURSOR_YAW = THREE.MathUtils.degToRad(3)
 const MAX_CURSOR_PITCH = THREE.MathUtils.degToRad(2)
 
-/* =========================================================
-   DEFAULT CONTROLS (LEVA SOURCE OF TRUTH)
-   ========================================================= */
 const CAMERA_DEFAULTS = {
   camOffsetX: -2,
   camOffsetY: 2.5,
   camOffsetZ: -3,
-
   camRotDegY: -16,
   camRotDegZ: -10,
-
   tightFollowToggle: false,
   lookAhead: 2,
-
   showLine: true,
   lineColor: '#00ffea',
   lineRadius: 0.04,
-
   showBriks: true,
   briksScale: 1
 }
 
-/* =========================================================
-   HELIX HELPERS
-   ========================================================= */
 function makeHelixPoints({ turns = 0.95, height = 40, radius = 45, points = 2000 }) {
   const arr = []
   for (let i = 0; i <= points; i++) {
@@ -102,9 +82,6 @@ function mapArcToU(lut, arcNorm) {
   return u0 + (u1 - u0) * t
 }
 
-/* =========================================================
-   CAMERA RIG
-   ========================================================= */
 export default function CameraRig({
   initialHelixConfig = { turns: 0.75, height: 25, radius: 20, points: 1500 },
   lutSamples = 1000
@@ -116,25 +93,20 @@ export default function CameraRig({
   const timelineOverall = useSelector(s => s.timeline.overallProgress)
   const durations = useSelector(s => s.timeline.durations)
 
-  /* ---------- LEVA CONTROLS ---------- */
-  const controls = ENABLE_LEVA
-    ? useControls('Camera · Helix', CAMERA_DEFAULTS)
-    : CAMERA_DEFAULTS
-
   const {
     camOffsetX, camOffsetY, camOffsetZ,
     camRotDegY, camRotDegZ,
     tightFollowToggle, lookAhead,
     showLine, lineColor, lineRadius,
     showBriks, briksScale
-  } = controls
+  } = CAMERA_DEFAULTS
 
   const curveRef = useRef()
   const lutRef = useRef()
   const ptsRef = useRef([])
   const bricksPtsRef = useRef([])
 
-  /* ---------- REGISTER SINGLE CAMERA ---------- */
+  /* register SAME camera for theatre wrappers */
   useEffect(() => {
     registry.setCameraRef({ camera })
 
@@ -145,7 +117,6 @@ export default function CameraRig({
     lutRef.current = buildArcLengthLUT(curveRef.current, lutSamples)
   }, [registry, camera])
 
-  /* ---------- CURSOR ROTATION ---------- */
   const mouse = useRef({ x: 0, y: 0 })
   const cursorQuatSmooth = useRef(new THREE.Quaternion())
 
@@ -171,15 +142,13 @@ export default function CameraRig({
     return (overall - tA) / tH
   }
 
-  /* ---------- FRAME LOOP ---------- */
   useFrame((_, dt) => {
     if (camState.mode !== 'helix') return
-    if (camState.locked || window.__INTRO_PLAYING__) return
+    if (camState.locked) return
     if (!curveRef.current || !lutRef.current) return
 
     let arcNorm =
-      camState.progress ??
-      overallToHelixLocal(timelineOverall, durations)
+      camState.progress ?? overallToHelixLocal(timelineOverall, durations)
 
     arcNorm = THREE.MathUtils.clamp(arcNorm, 0, 1)
 
@@ -227,13 +196,9 @@ export default function CameraRig({
       .multiply(qExtra)
       .multiply(cursorQuatSmooth.current)
 
-    const damping = isMobile
-      ? HELIX_DAMPING_MOBILE
-      : HELIX_DAMPING_DESKTOP
-
     const alpha = tightFollowToggle
       ? 1
-      : (1 - Math.exp(-damping * dt))
+      : (1 - Math.exp(-HELIX_DAMPING * dt))
 
     camera.position.lerp(desiredPos.current, alpha)
     camera.quaternion.slerp(desiredQuat.current, alpha)
