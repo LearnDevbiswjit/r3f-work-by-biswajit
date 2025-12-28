@@ -121,7 +121,7 @@ export default function App() {
         <TimelineBootstrap />
         <ScrollMapper pxPerSec={5} />
 
-        <TimelineWhiteFade triggerAtSec={580} fadeDuration={2} />
+        <TimelineWhiteFade triggerAtSec={600} fadeDuration={2} />
 
         <EnvironmentGateProvider>
           <LoaderOverlay />

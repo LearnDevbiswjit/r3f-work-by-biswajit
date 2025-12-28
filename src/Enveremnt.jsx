@@ -212,7 +212,9 @@ export default function Enveremnt () {
       </e.group>
 
       <e.group theatreKey='L3stone'>
+        <Float speed={1.5} rotationIntensity={0.1} floatIntensity={4}>
         <L3stone scale={50} />
+        </Float>
       </e.group>
 
       <e.group theatreKey='R1stone'>
@@ -220,7 +222,7 @@ export default function Enveremnt () {
       </e.group>
 
       <e.group theatreKey='Pillarstone'>
-        <Float speed={1.5} rotationIntensity={0.1} floatIntensity={0.5}>
+        <Float speed={1.5} rotationIntensity={0.1} floatIntensity={4}>
           <Pillarstone scale={10} />
         </Float>
       </e.group>
@@ -271,8 +273,8 @@ export default function Enveremnt () {
 
       <e.pointLight theatreKey='LightBlue' position={[0, 0, 1]} />
       <e.pointLight theatreKey='LightBlue 2' position={[0, 0, 1]} />
-
-      <e.group theatreKey='UnderwaterSleeve' position={[0, 0, 1]}>
+   <e.pointLight theatreKey='Light-3' position={[0, 0, 1]} />
+      {/* <e.group theatreKey='UnderwaterSleeve' position={[0, 0, 1]}>
         <UnderwaterSleeve
           topY={-0.52}
           depth={1000}
@@ -281,19 +283,19 @@ export default function Enveremnt () {
           bottomColor='#2E264C'
           onlyWhenUnderwater={true}
         />
-      </e.group>
+      </e.group> */}
       <e.group theatreKey='SandSurface'>
         <SandSurface textureUrl={sandUrl} size={3000} />
       </e.group>
 
-      {/* <e.group theatreKey='CausticsLightProjector'>
+      <e.group theatreKey='CausticsLightProjector'>
         <CausticsLightProjector
           src={videoUrl}
           target={[0, 0, 0]}
           fitRect={[9000, 9000]}
           intensity={50}
         />
-      </e.group> */}
+      </e.group>
 
       {/* <VolumetricFogBubble/>
  <PostProcessingUnderwater/> */}
@@ -302,7 +304,7 @@ export default function Enveremnt () {
         surfaceColor='#E8C5D2'
         surfaceDensity={0.00009}
         underColor='#7E66A4'
-        underDensity={0.001}
+        underDensity={0.0015}
         blendMeters={30}
       />
 
