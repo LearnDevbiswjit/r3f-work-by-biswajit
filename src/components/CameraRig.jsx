@@ -1,4 +1,4 @@
-// CameraRig.jsx — Helix damping controlled by ONE variable (NO Leva)
+// CameraRig.jsx — SINGLE CAMERA CONTROLLER (HELIX ONLY)
 
 import React, { useRef, useEffect } from 'react'
 import * as THREE from 'three'
@@ -8,12 +8,6 @@ import { useRegistry } from '../registry/TimelineRegistryContext'
 import Briks from './Briks'
 import HelixLine from './HelixLine'
 
-/* =========================================================
-   🔧 HELIX DAMPING CONTROL (CHANGE ONLY THIS VALUE)
-   ---------------------------------------------------------
-   Bigger value  = more smooth / slow follow
-   Smaller value = tighter / faster follow
-   ========================================================= */
 const HELIX_DAMPING = 3
 
 const isMobile =
@@ -30,17 +24,13 @@ const CAMERA_DEFAULTS = {
   camOffsetX: -2,
   camOffsetY: 2.5,
   camOffsetZ: -3,
-
   camRotDegY: -16,
   camRotDegZ: -10,
-
   tightFollowToggle: false,
   lookAhead: 2,
-
   showLine: true,
   lineColor: '#00ffea',
   lineRadius: 0.04,
-
   showBriks: true,
   briksScale: 1
 }
@@ -116,14 +106,16 @@ export default function CameraRig({
   const ptsRef = useRef([])
   const bricksPtsRef = useRef([])
 
+  /* register SAME camera for theatre wrappers */
   useEffect(() => {
+    registry.setCameraRef({ camera })
+
     const pts = makeHelixPoints(initialHelixConfig)
     ptsRef.current = pts
     bricksPtsRef.current = pts.map(p => p.clone())
     curveRef.current = new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.5)
     lutRef.current = buildArcLengthLUT(curveRef.current, lutSamples)
-    registry.setCameraRef({ camera })
-  }, [])
+  }, [registry, camera])
 
   const mouse = useRef({ x: 0, y: 0 })
   const cursorQuatSmooth = useRef(new THREE.Quaternion())
@@ -142,22 +134,21 @@ export default function CameraRig({
   const desiredQuat = useRef(new THREE.Quaternion())
 
   const overallToHelixLocal = (overall, d) => {
-    const total = (d.theatreA || 0) + (d.helix || 0) + (d.theatreB || 0)
-    const tA = (d.theatreA || 0) / total
-    const tH = (d.helix || 0) / total
+    const total = d.theatreA + d.helix + d.theatreB
+    const tA = d.theatreA / total
+    const tH = d.helix / total
     if (overall <= tA) return 0
     if (overall >= tA + tH) return 1
     return (overall - tA) / tH
   }
 
   useFrame((_, dt) => {
+    if (camState.mode !== 'helix') return
+    if (camState.locked) return
     if (!curveRef.current || !lutRef.current) return
-    if (camState.locked || window.__INTRO_PLAYING__) return
 
     let arcNorm =
-      camState.mode === 'helix'
-        ? camState.progress
-        : overallToHelixLocal(timelineOverall, durations)
+      camState.progress ?? overallToHelixLocal(timelineOverall, durations)
 
     arcNorm = THREE.MathUtils.clamp(arcNorm, 0, 1)
 
@@ -216,7 +207,13 @@ export default function CameraRig({
 
   return (
     <>
-      {showLine && <HelixLine points={ptsRef.current} color={lineColor} radius={lineRadius} />}
+      {showLine && (
+        <HelixLine
+          points={ptsRef.current}
+          color={lineColor}
+          radius={lineRadius}
+        />
+      )}
       {showBriks && (
         <Briks
           points={bricksPtsRef.current}
@@ -235,4 +232,4 @@ export default function CameraRig({
       )}
     </>
   )
-} 
+}
