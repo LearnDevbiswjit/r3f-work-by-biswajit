@@ -119,7 +119,7 @@ export default function App() {
         {ENABLE_STUDIO && <StudioManager />}
 
         <TimelineBootstrap />
-        <ScrollMapper pxPerSec={5} />
+        <ScrollMapper pxPerSec={3} />
 
         <TimelineWhiteFade triggerAtSec={600} fadeDuration={2} />
 

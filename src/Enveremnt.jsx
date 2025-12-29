@@ -37,13 +37,19 @@ import UnderwaterVolume from './component/UnderwaterVolume'
 import { useEnvironmentGate } from './loader/EnvironmentGate'
 import { assetStart, assetEnd } from './loader/AssetGate'
 
+const isMobile =
+  typeof window !== 'undefined' &&
+  /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+
 export default function Enveremnt () {
   const { reportReady } = useEnvironmentGate()
 
   const frameSentRef = useRef(false)
   const mountedRef = useRef(false)
 
-  /* ---------- manual asset gate (video example) ---------- */
+  /* ======================================================
+     MANUAL ASSET GATE — VIDEO (MOBILE SAFE)
+     ====================================================== */
   useEffect(() => {
     assetStart('caustics-video')
 
@@ -53,16 +59,28 @@ export default function Enveremnt () {
     video.muted = true
     video.playsInline = true
 
-    video.onloadeddata = () => {
+    let released = false
+    const release = () => {
+      if (released) return
+      released = true
       assetEnd('caustics-video')
     }
 
+    video.onloadeddata = release
+    video.onerror = release
+
+    // 🔒 mobile fallback — never block loader forever
+    const safety = setTimeout(release, isMobile ? 3000 : 1500)
+
     return () => {
+      clearTimeout(safety)
       video.src = ''
     }
   }, [])
 
-  /* ---------- first frame + DOM commit guarantee ---------- */
+  /* ======================================================
+     FIRST FRAME + GPU SUBMIT GUARANTEE
+     ====================================================== */
   useFrame(() => {
     if (frameSentRef.current) return
     frameSentRef.current = true
@@ -76,13 +94,25 @@ export default function Enveremnt () {
     })
   })
 
+  /* ======================================================
+     WATCHDOG (MOBILE / LOW-END SAFETY)
+     ====================================================== */
   useEffect(() => {
     mountedRef.current = true
+
+    const watchdog = setTimeout(() => {
+      reportReady()
+    }, isMobile ? 2000 : 1200)
+
     return () => {
       mountedRef.current = false
+      clearTimeout(watchdog)
     }
   }, [])
 
+  /* ======================================================
+     SCENE
+     ====================================================== */
   return (
     <group>
       <e.group theatreKey='WaterPlant1'>
@@ -205,7 +235,7 @@ export default function Enveremnt () {
         <UnderWaterMountainSide scale={20} />
       </e.group>
 
-      {/* LIGHTS (RESTORED) */}
+      {/* LIGHTS */}
       <e.pointLight theatreKey='LightBlue' position={[0, 0, 1]} />
       <e.pointLight theatreKey='LightBlue 2' position={[0, 0, 1]} />
       <e.pointLight theatreKey='Light-3' position={[0, 0, 1]} />
@@ -240,8 +270,8 @@ export default function Enveremnt () {
           duration={600}
           title='Skin Health'
           bullets={[
-            'Anti-aging, collagen production, reduces acne, hydrates skin and decreases excessive sebum oil in the skin.',
-            'Helps with severe skin conditions like eczema and psoriasis.'
+            'Anti-aging, collagen production, reduces acne.',
+            'Helps with severe skin conditions.'
           ]}
           bubbleSrc='/textures/bubble1.png'
           position={[0, 0.8, 0]}
@@ -255,8 +285,8 @@ export default function Enveremnt () {
           duration={600}
           title='Skin Health'
           bullets={[
-            'Anti-aging, collagen production, reduces acne, hydrates skin and decreases excessive sebum oil in the skin.',
-            'Helps with severe skin conditions like eczema and psoriasis.'
+            'Anti-aging, collagen production, reduces acne.',
+            'Helps with severe skin conditions.'
           ]}
           bubbleSrc='/textures/bubble1.png'
           position={[0, 0.8, 0]}
