@@ -1,18 +1,17 @@
-// src/components/LoaderOverlay.jsx
 import { useEffect, useState, useRef } from 'react'
 import * as THREE from 'three'
 import { useEnvironmentGate } from '../loader/EnvironmentGate'
 
 export default function LoaderOverlay() {
-  const { envReady } = useEnvironmentGate()
+  const { envReady, manualPending } = useEnvironmentGate()
 
   const [progress, setProgress] = useState(0)
-  const [assetsDone, setAssetsDone] = useState(false)
+  const [threeDone, setThreeDone] = useState(false)
   const [hide, setHide] = useState(false)
 
   const firedRef = useRef(false)
 
-  /* ---------- asset loading ---------- */
+  // Three.js asset progress
   useEffect(() => {
     const mgr = THREE.DefaultLoadingManager
 
@@ -23,8 +22,8 @@ export default function LoaderOverlay() {
     }
 
     mgr.onLoad = () => {
-      setAssetsDone(true)
-      console.log('[LOADER] assets loaded')
+      setThreeDone(true)
+      console.log('[LOADER] three assets done')
     }
 
     return () => {
@@ -33,25 +32,29 @@ export default function LoaderOverlay() {
     }
   }, [])
 
-  /* ---------- FINAL SYNC ---------- */
+  // FINAL SYNC (industry rule)
   useEffect(() => {
-    if (!assetsDone || !envReady) return
+    if (!threeDone) return
+    if (manualPending > 0) return
+    if (!envReady) return
     if (firedRef.current) return
 
     firedRef.current = true
     setProgress(100)
 
-    // ⏳ wait a tick so DOM is ready
     requestAnimationFrame(() => {
       setTimeout(() => {
         window.__APP_LOADER_DONE__ = true
         window.dispatchEvent(new Event('APP_LOADER_DONE'))
         setHide(true)
-      }, 350) // fade / UX buffer
+      }, 300) // smooth UX buffer
     })
-  }, [assetsDone, envReady])
+  }, [threeDone, manualPending, envReady])
 
   if (hide) return null
+
+  const shown =
+    manualPending > 0 && progress >= 95 ? 95 : progress
 
   return (
     <div
@@ -67,7 +70,7 @@ export default function LoaderOverlay() {
         fontSize: 16
       }}
     >
-      Loading {progress}%
+      Loading {shown}%
     </div>
   )
 }

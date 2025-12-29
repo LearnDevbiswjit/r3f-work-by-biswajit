@@ -1,5 +1,5 @@
 // src/Enveremnt.jsx
-import React, { useRef, useEffect } from 'react'
+import React, { useRef } from 'react'
 import * as THREE from 'three'
 import { editable as e } from '@theatre/r3f'
 import { Float } from '@react-three/drei'
@@ -24,64 +24,34 @@ import sandUrl from '../src/assets/sand.jpg?url'
 import videoUrl from '../src/assets/caustics.mp4?url'
 
 import { UnderWaterMountainSide } from './component/underwater/UnderWaterMountainSide'
+
 import CloudFloating from './component/CloudFloating'
 import TextBoxUnderWater from './component/underwater/TextBoxUnderWater'
 import CloudeGradiantShader from './component/CloudeGradiantShader'
 import RockStone from './rock/RockStone'
-
-import UnderwaterFog from './component/underwater/UnderwaterFog'
-import WaterTop from './component/WaterTop'
-import WaterUnder from './component/WaterUnder'
-import UnderwaterVolume from './component/UnderwaterVolume'
-
+// import BlenderPathDebug from './upperWater/BlenderPathDebug'
 import { useEnvironmentGate } from './loader/EnvironmentGate'
-import { assetStart, assetEnd } from './loader/AssetGate'
+// import BlenderPathWithBox from './upperWater/BlenderPathWithBox'
+
+// import VolumetricFogBubble from './component/underwater/VolumetricFogBubble'
+// import PostProcessingUnderwater from './component/underwater/PostProcessingUnderwater'
+import UnderwaterFog from './component/underwater/UnderwaterFog'
+
+ import WaterTop from './component/WaterTop'
+ import WaterUnder from './component/WaterUnder'
+import UnderwaterVolume from './component/UnderwaterVolume'
 
 export default function Enveremnt () {
   const { reportReady } = useEnvironmentGate()
+  const sentRef = useRef(false)
 
-  const frameSentRef = useRef(false)
-  const mountedRef = useRef(false)
-
-  /* ---------- manual asset gate (video example) ---------- */
-  useEffect(() => {
-    assetStart('caustics-video')
-
-    const video = document.createElement('video')
-    video.src = videoUrl
-    video.preload = 'auto'
-    video.muted = true
-    video.playsInline = true
-
-    video.onloadeddata = () => {
-      assetEnd('caustics-video')
-    }
-
-    return () => {
-      video.src = ''
-    }
-  }, [])
-
-  /* ---------- first frame + DOM commit guarantee ---------- */
+  // 🔥 REAL guarantee: first render frame completed
   useFrame(() => {
-    if (frameSentRef.current) return
-    frameSentRef.current = true
-
-    requestAnimationFrame(() => {
-      setTimeout(() => {
-        if (mountedRef.current) {
-          reportReady()
-        }
-      }, 0)
-    })
-  })
-
-  useEffect(() => {
-    mountedRef.current = true
-    return () => {
-      mountedRef.current = false
+    if (!sentRef.current) {
+      sentRef.current = true
+      reportReady()
     }
-  }, [])
+  })
 
   return (
     <group>
@@ -106,9 +76,21 @@ export default function Enveremnt () {
           color1='#8d8093'
           color2='#ffffff'
           speed={9.9}
+          sharedNoise={{
+            worldScale: 50,
+            warpAmt: 0.25,
+            ridgePower: 0.1,
+            ridgeMix: 0.1,
+            dir: [-2.0, -0.9],
+            driftSpeed: 0.218,
+            wobbleFreq: 1.01,
+            wobbleMag: 0.02,
+            dissolveScale: 3.8,
+            dissolveSpeed: 0.03,
+            dissolveWidth: 0.11
+          }}
         />
       </e.group>
-
       <e.group theatreKey='Cloud-front-2' position={[0, 0, 1]}>
         <CloudFloating
           numPlanes={20}
@@ -119,6 +101,19 @@ export default function Enveremnt () {
           color1='#8d8093'
           color2='#f1f1f1'
           speed={9.9}
+          sharedNoise={{
+            worldScale: 50,
+            warpAmt: 0.25,
+            ridgePower: 0.1,
+            ridgeMix: 0.1,
+            dir: [-4.0, -1.9],
+            driftSpeed: 0.118,
+            wobbleFreq: 1.01,
+            wobbleMag: 0.02,
+            dissolveScale: 3.8,
+            dissolveSpeed: 0.03,
+            dissolveWidth: 0.11
+          }}
         />
       </e.group>
 
@@ -132,12 +127,24 @@ export default function Enveremnt () {
           ySpread={70}
           zSpread={250}
           speed={2.0}
+          sharedNoise={{
+            worldScale: 300.0098,
+            warpAmt: 0.55,
+            ridgePower: 0.2,
+            ridgeMix: 0.95,
+            dir: [-1.0, 0.52],
+            driftSpeed: 0.558,
+            wobbleFreq: 0.02,
+            wobbleMag: 0.12,
+            dissolveScale: 3.8,
+            dissolveSpeed: 0.03,
+            dissolveWidth: 0.11
+          }}
         />
       </e.group>
-
       <e.group theatreKey='Cloud-front-of-camera' position={[0, 0, 1]}>
         <CloudFloating
-          jitterStabilize
+          jitterStabilize={true}
           jitterLowpassAlpha={0.06}
           jitterCompStrength={1.0}
           numPlanes={20}
@@ -148,8 +155,49 @@ export default function Enveremnt () {
           xSpread={150}
           ySpread={150}
           zSpread={50}
+          sharedNoise={{
+            worldScale: 0.0098,
+            warpAmt: 0.55,
+            ridgePower: 1.2,
+            ridgeMix: 0.95,
+            dir: [-1.0, 0.09],
+            driftSpeed: 0.018,
+            wobbleFreq: 0.05,
+            wobbleMag: 0.12,
+            dissolveScale: 3.8,
+            dissolveSpeed: 0.03,
+            dissolveWidth: 0.11
+          }}
         />
       </e.group>
+      {/* <e.group theatreKey="CloudeGradiantShader">
+        <CloudeGradiantShader />
+      </e.group> */}
+      {/* <e.group theatreKey='sea-cloud-1' position={[0, 0, 1]}>
+              <CloudFloating
+                numPlanes={20}
+                opacity={0.5}
+                xSpread={1000}
+                ySpread={100}
+                zSpread={250}
+                color1='#f8c2b7'
+                color2='#f3a9b5'
+                speed={0.9}
+                sharedNoise={{
+                  worldScale: 50,
+                  warpAmt: 0.25,
+                  ridgePower: 0.1,
+                  ridgeMix: 0.1,
+                  dir: [-1.0, -0.9],
+                  driftSpeed: 0.018,
+                  wobbleFreq: 0.01,
+                  wobbleMag: 0.02,
+                  dissolveScale: 3.8,
+                  dissolveSpeed: 0.03,
+                  dissolveWidth: 0.11
+                }}
+              />
+            </e.group> */}
 
       <e.group theatreKey='L1stone'>
         <Float speed={2} rotationIntensity={0.1} floatIntensity={0.7}>
@@ -165,7 +213,7 @@ export default function Enveremnt () {
 
       <e.group theatreKey='L3stone'>
         <Float speed={1.5} rotationIntensity={0.1} floatIntensity={4}>
-          <L3stone scale={50} />
+        <L3stone scale={50} />
         </Float>
       </e.group>
 
@@ -183,7 +231,25 @@ export default function Enveremnt () {
         <ConchShell scale={50} />
       </e.group>
 
+      {/* <e.group theatreKey='FishMain'>
+        <Fish scale={100} />
+        <BlenderPathDebug color='#00ffcc' width={3} />
+      </e.group> */}
+
+      {/* <gridHelper args={[100, 20]} /> */}
       <axesHelper args={[50]} />
+
+      {/* <e.group
+        theatreKey='FishPathRoot'
+        position={[0, 0, 0]}
+        rotation={[0, 0, 0]}
+        scale={1}
+      >
+        <BlenderPathWithBox
+          pathColor='#00ff66' // 🟢 blender path color
+          boxColor='yellow' // 🟨 follower
+        />
+      </e.group> */}
 
       <e.group theatreKey='SkyPlane'>
         <ImagePlane url='./sky.png' position={[0, 0, -5]} />
@@ -205,26 +271,34 @@ export default function Enveremnt () {
         <UnderWaterMountainSide scale={20} />
       </e.group>
 
-      {/* LIGHTS (RESTORED) */}
       <e.pointLight theatreKey='LightBlue' position={[0, 0, 1]} />
       <e.pointLight theatreKey='LightBlue 2' position={[0, 0, 1]} />
-      <e.pointLight theatreKey='Light-3' position={[0, 0, 1]} />
-
+   <e.pointLight theatreKey='Light-3' position={[0, 0, 1]} />
       <e.group theatreKey='UnderwaterSleeve' position={[0, 0, 1]}>
         <UnderwaterSleeve
-          topY={-0.5}
+          topY={-0.50}
           depth={1000}
           radius={1000}
           topColor='#4D2E69'
           bottomColor='#2E264C'
-          onlyWhenUnderwater
+          onlyWhenUnderwater={true}
         />
       </e.group>
-
       <e.group theatreKey='SandSurface'>
         <SandSurface textureUrl={sandUrl} size={3000} />
       </e.group>
 
+      {/* <e.group theatreKey='CausticsLightProjector'>
+        <CausticsLightProjector
+          src={videoUrl}
+          target={[0, 0, 0]}
+          fitRect={[9000, 9000]}
+          intensity={50}
+        />
+      </e.group> */}
+
+      {/* <VolumetricFogBubble/>
+ <PostProcessingUnderwater/> */}
       <UnderwaterFog
         waterY={0}
         surfaceColor='#E8C5D2'
@@ -234,10 +308,34 @@ export default function Enveremnt () {
         blendMeters={30}
       />
 
-      <e.group theatreKey='TextBoxUnderWater-1' position={[0, 0, 1]}>
+      {/* <e.mesh theatreKey='ShaderSingleBeam_A'>
+        <ShaderSingleBeam
+          rotation={[THREE.MathUtils.degToRad(-6), 0, 2.5]}
+          seedOffset={100}
+        />
+      </e.mesh>
+
+      <e.mesh theatreKey='ShaderSingleBeam_B'>
+        <ShaderSingleBeam
+          rotation={[THREE.MathUtils.degToRad(-6), 0, 2.5]}
+          seedOffset={100}
+        />
+      </e.mesh>
+
+      <e.mesh theatreKey='ShaderSingleBeam_C'>
+        <ShaderSingleBeam seedOffset={100} />
+      </e.mesh> */}
+
+ 
+{/* <WaterTop waterY={0} />
+      <WaterUnder waterY={0} />
+      <UnderwaterVolume waterY={0} /> */}
+
+<e.group theatreKey='TextBoxUnderWater-1' position={[0, 0, 1]}>
         <TextBoxUnderWater
-          startAt={5000}
-          duration={600}
+          startAt={5000} // এই কম্পোনেন্ট second এ শুরু করবে
+          duration={600} // 4 seconds-এর স্ক্রল পজিশনে পুরো growth হবে (0->1)
+         
           title='Skin Health'
           bullets={[
             'Anti-aging, collagen production, reduces acne, hydrates skin and decreases excessive sebum oil in the skin.',
@@ -249,10 +347,14 @@ export default function Enveremnt () {
         />
       </e.group>
 
+      
+
+
       <e.group theatreKey='TextBoxUnderWater-2' position={[0, 0, 1]}>
         <TextBoxUnderWater
-          startAt={6000}
-          duration={600}
+          startAt={6000} // এই কম্পোনেন্ট second এ শুরু করবে
+          duration={600} // 4 seconds-এর স্ক্রল পজিশনে পুরো growth হবে (0->1)
+         
           title='Skin Health'
           bullets={[
             'Anti-aging, collagen production, reduces acne, hydrates skin and decreases excessive sebum oil in the skin.',
@@ -263,6 +365,8 @@ export default function Enveremnt () {
           scale={20}
         />
       </e.group>
+
+
     </group>
   )
 }
