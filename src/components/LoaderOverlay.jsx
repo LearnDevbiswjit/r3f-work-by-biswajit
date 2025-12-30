@@ -1,17 +1,18 @@
+// src/components/LoaderOverlay.jsx
 import { useEffect, useState, useRef } from 'react'
 import * as THREE from 'three'
 import { useEnvironmentGate } from '../loader/EnvironmentGate'
 
 export default function LoaderOverlay() {
-  const { envReady, manualPending } = useEnvironmentGate()
+  const { envReady } = useEnvironmentGate()
 
   const [progress, setProgress] = useState(0)
-  const [threeDone, setThreeDone] = useState(false)
+  const [assetsDone, setAssetsDone] = useState(false)
   const [hide, setHide] = useState(false)
 
   const firedRef = useRef(false)
 
-  // Three.js asset progress
+  /* ---------- asset loading ---------- */
   useEffect(() => {
     const mgr = THREE.DefaultLoadingManager
 
@@ -22,8 +23,8 @@ export default function LoaderOverlay() {
     }
 
     mgr.onLoad = () => {
-      setThreeDone(true)
-      console.log('[LOADER] three assets done')
+      setAssetsDone(true)
+      console.log('[LOADER] assets loaded')
     }
 
     return () => {
@@ -32,29 +33,25 @@ export default function LoaderOverlay() {
     }
   }, [])
 
-  // FINAL SYNC (industry rule)
+  /* ---------- FINAL SYNC ---------- */
   useEffect(() => {
-    if (!threeDone) return
-    if (manualPending > 0) return
-    if (!envReady) return
+    if (!assetsDone || !envReady) return
     if (firedRef.current) return
 
     firedRef.current = true
     setProgress(100)
 
+    // ⏳ wait a tick so DOM is ready
     requestAnimationFrame(() => {
       setTimeout(() => {
         window.__APP_LOADER_DONE__ = true
         window.dispatchEvent(new Event('APP_LOADER_DONE'))
         setHide(true)
-      }, 300) // smooth UX buffer
+      }, 350) // fade / UX buffer
     })
-  }, [threeDone, manualPending, envReady])
+  }, [assetsDone, envReady])
 
   if (hide) return null
-
-  const shown =
-    manualPending > 0 && progress >= 95 ? 95 : progress
 
   return (
     <div
@@ -70,7 +67,7 @@ export default function LoaderOverlay() {
         fontSize: 16
       }}
     >
-      Loading {shown}%
+      Loading {progress}%
     </div>
   )
 }

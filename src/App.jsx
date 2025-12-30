@@ -96,6 +96,36 @@ function TimelineBootstrap() {
    MAIN APP
    ========================================================= */
 export default function App() {
+
+  useEffect(() => {
+  // 1️⃣ fake scroll to hide URL bar
+  window.scrollTo(0, 1)
+
+  // 2️⃣ sync real visible height
+  const setVH = () => {
+    const h = window.visualViewport
+      ? window.visualViewport.height
+      : window.innerHeight
+
+    document.documentElement.style.setProperty(
+      '--app-height',
+      `${h}px`
+    )
+  }
+
+  setVH()
+
+  window.visualViewport?.addEventListener('resize', setVH)
+  window.addEventListener('orientationchange', setVH)
+
+  return () => {
+    window.visualViewport?.removeEventListener('resize', setVH)
+    window.removeEventListener('orientationchange', setVH)
+  }
+}, [])
+
+
+
   useEffect(() => {
     if ('scrollRestoration' in window.history) {
       window.history.scrollRestoration = 'manual'
@@ -119,9 +149,9 @@ export default function App() {
         {ENABLE_STUDIO && <StudioManager />}
 
         <TimelineBootstrap />
-        <ScrollMapper pxPerSec={3} />
+        <ScrollMapper pxPerSec={5} />
 
-        <TimelineWhiteFade triggerAtSec={600} fadeDuration={2} />
+        <TimelineWhiteFade triggerAtSec={270} fadeDuration={1.5} />
 
         <EnvironmentGateProvider>
           <LoaderOverlay />
