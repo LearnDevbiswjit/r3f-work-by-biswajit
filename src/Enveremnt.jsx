@@ -26,11 +26,13 @@ import { UnderWaterMountainSide } from './component/underwater/UnderWaterMountai
 import CloudFloating from './component/CloudFloating'
 import TextBoxUnderWater from './component/underwater/TextBoxUnderWater'
 import RockStone from './rock/RockStone'
+import ShaderSingleBeam from './component/underwater/ShaderSingleBeam'
 
 import sandUrl from '../src/assets/sand.jpg?url'
 import videoUrl from '../src/assets/caustics.mp4?url'
-
-export default function Enveremnt() {
+import UnderRoundMaountain from './component/underwater/UnderRoundMaountain'
+import CausticsLightProjector from './component/underwater/caustics/CausticsLightProjector'
+export default function Enveremnt () {
   const { reportReady } = useEnvironmentGate()
   const { gl, scene, camera } = useThree()
   const frameOnce = useRef(false)
@@ -43,9 +45,11 @@ export default function Enveremnt() {
     v.preload = 'auto'
     v.muted = true
     v.playsInline = true
-    v.addEventListener('loadedmetadata', () => assetEnd(), { once:true })
-    v.addEventListener('error', () => assetEnd(), { once:true })
-    return () => { v.src = '' }
+    v.addEventListener('loadedmetadata', () => assetEnd(), { once: true })
+    v.addEventListener('error', () => assetEnd(), { once: true })
+    return () => {
+      v.src = ''
+    }
   }, [])
 
   // ----- FIRST RENDER COMMIT (GPU compile + one frame) -----
@@ -64,27 +68,86 @@ export default function Enveremnt() {
   return (
     <group>
       <e.group theatreKey='WaterPlant1'>
-        <ImageSmall url='./water-plant.png' position={[0,0,-5]} />
+        <ImageSmall url='./water-plant.png' position={[0, 0, -5]} />
       </e.group>
 
       <e.group theatreKey='PlantBranch1'>
-        <ImageSmall url='./plant-image/plant-banch-1.png' position={[0,0,-5]} />
+        <ImageSmall
+          url='./plant-image/plant-banch-1.png'
+          position={[0, 0, -5]}
+        />
       </e.group>
 
-      <e.group theatreKey='Cloud-front' position={[0,0,1]}>
-        <CloudFloating numPlanes={20} opacity={0.5} xSpread={700} ySpread={70} zSpread={250} color1='#8d8093' color2='#ffffff' speed={9.9} />
+      <e.group theatreKey='Cloud-front' position={[0, 0, 1]}>
+        <CloudFloating
+          numPlanes={20}
+          opacity={0.5}
+          xSpread={700}
+          ySpread={70}
+          zSpread={250}
+          color1='#8d8093'
+          color2='#ffffff'
+          speed={2.0}
+        />
       </e.group>
 
+      <e.group theatreKey='Cloud-front-2' position={[0, 0, 1]}>
+        <CloudFloating
+          numPlanes={20}
+          opacity={0.5}
+          xSpread={700}
+          ySpread={70}
+          zSpread={250}
+          color1='#8d8093'
+          color2='#ffffff'
+          speed={2.0}
+        />
+      </e.group>
+
+      <e.group theatreKey='Cloud-back-hide' position={[0, 0, 1]}>
+        <CloudFloating
+          numPlanes={20}
+          opacity={0.5}
+          xSpread={700}
+          ySpread={70}
+          zSpread={250}
+          color1='#8d8093'
+          color2='#ffffff'
+          speed={1.0}
+        />
+      </e.group>
+
+      <e.group theatreKey='Cloud-Back' position={[0, 0, 1]}>
+        <CloudFloating
+          numPlanes={20}
+          opacity={0.15}
+          color1='#ffffff'
+          color2='#1004b9'
+          xSpread={700}
+          ySpread={70}
+          zSpread={250}
+          speed={0}
+           
+        />
+
+
+      </e.group>
       <e.group theatreKey='L1stone'>
-        <Float speed={2}><L1stone scale={10} /></Float>
+        <Float speed={2}>
+          <L1stone scale={10} />
+        </Float>
       </e.group>
 
       <e.group theatreKey='L2stone'>
-        <Float speed={5}><L2stone scale={10} /></Float>
+        <Float speed={5}>
+          <L2stone scale={10} />
+        </Float>
       </e.group>
 
       <e.group theatreKey='L3stone'>
-        <Float speed={1.5}><L3stone scale={50} /></Float>
+        <Float speed={1.5}>
+          <L3stone scale={50} />
+        </Float>
       </e.group>
 
       <e.group theatreKey='R1stone'>
@@ -92,7 +155,9 @@ export default function Enveremnt() {
       </e.group>
 
       <e.group theatreKey='Pillarstone'>
-        <Float speed={1.5}><Pillarstone scale={10} /></Float>
+        <Float speed={1.5}>
+          <Pillarstone scale={10} />
+        </Float>
       </e.group>
 
       <e.group theatreKey='ConchShell'>
@@ -100,7 +165,7 @@ export default function Enveremnt() {
       </e.group>
 
       <e.group theatreKey='SkyPlane'>
-        <ImagePlane url='./sky.png' position={[0,0,-5]} />
+        <ImagePlane url='./sky.png' position={[0, 0, -5]} />
       </e.group>
 
       <e.group theatreKey='RockStone'>
@@ -115,31 +180,102 @@ export default function Enveremnt() {
         <UnderWaterMountainSide scale={20} />
       </e.group>
 
-      <e.pointLight theatreKey='LightBlue' position={[0,0,1]} />
-      <e.pointLight theatreKey='LightBlue 2' position={[0,0,1]} />
-      <e.pointLight theatreKey='Light-3' position={[0,0,1]} />
+      <e.group theatreKey='UnderWaterMountainSide-2'>
+        <UnderWaterMountainSide scale={20} />
+      </e.group>
+
+      <e.group theatreKey='UnderWaterMountainSide-3'>
+        <UnderWaterMountainSide scale={20} />
+      </e.group>
+
+      <e.group theatreKey='UnderWaterMountainSide-4'>
+        <UnderWaterMountainSide scale={20} />
+      </e.group>
+
+      <e.group theatreKey='UnderWater-Round-Maountain'>
+        <UnderRoundMaountain scale={20} />
+      </e.group>
+
+      <e.pointLight theatreKey='LightBlue' position={[0, 0, 1]} />
+      <e.pointLight theatreKey='LightBlue 2' position={[0, 0, 1]} />
+      <e.pointLight theatreKey='Light-3' position={[0, 0, 1]} />
 
       <e.group theatreKey='UnderwaterSleeve'>
-        <UnderwaterSleeve topY={-0.5} depth={1000} radius={1000} topColor='#4D2E69' bottomColor='#2E264C' onlyWhenUnderwater />
+        <UnderwaterSleeve
+          topY={-0.5}
+          depth={1000}
+          radius={1000}
+          topColor='#4D2E69'
+          bottomColor='#2E264C'
+          onlyWhenUnderwater
+        />
       </e.group>
 
       <e.group theatreKey='SandSurface'>
-        <SandSurface textureUrl={sandUrl} size={3000} />
+        <SandSurface textureUrl={sandUrl} size={5000} />
       </e.group>
 
-      <UnderwaterFog waterY={0} surfaceColor='#E8C5D2' surfaceDensity={0.00009} underColor='#7E66A4' underDensity={0.0015} blendMeters={30} />
+      <UnderwaterFog
+        waterY={0}
+        surfaceColor='#E8C5D2'
+        surfaceDensity={0.00009}
+        underColor='#7E66A4'
+        underDensity={0.0015}
+        blendMeters={30}
+      />
 
       <e.group theatreKey='TextBoxUnderWater-1'>
-        <TextBoxUnderWater startAt={5000} duration={600} title='Skin Health'
-          bullets={['Anti-aging, collagen production, reduces acne.','Helps with severe skin conditions.']}
-          bubbleSrc='/textures/bubble1.png' position={[0,0.8,0]} scale={20} />
+        <TextBoxUnderWater
+          startAt={5000}
+          duration={3500}
+          title='Skin Health'
+          bullets={[
+            'Anti-aging, collagen production, reduces acne.',
+            'Helps with severe skin conditions.'
+          ]}
+          bubbleSrc='/textures/bubble1.png'
+          position={[0, 0.8, 0]}
+          scale={40}
+        />
       </e.group>
 
-      <e.group theatreKey='TextBoxUnderWater-2'>
+      {/* <e.group theatreKey='TextBoxUnderWater-2'>
         <TextBoxUnderWater startAt={6000} duration={600} title='Skin Health'
           bullets={['Anti-aging, collagen production, reduces acne.','Helps with severe skin conditions.']}
           bubbleSrc='/textures/bubble1.png' position={[0,0.8,0]} scale={20} />
+      </e.group> */}
+
+      <e.group theatreKey='CausticsLightProjector' position={[0, 0, -1]}>
+        <CausticsLightProjector
+          src={videoUrl}
+          target={[0, 200, 0]}
+          fitRect={[5000, 5000]}
+          worldCell={1000}
+          cookieSize={512}
+          intensity={10}
+          playbackRate={2}
+        />
       </e.group>
+
+      <e.mesh theatreKey='ShaderSingleBeam_A'>
+        <ShaderSingleBeam
+          rotation={[THREE.MathUtils.degToRad(-6), 0, 2.5]}
+          seedOffset={100}
+        />
+      </e.mesh>
+
+      <e.mesh theatreKey='ShaderSingleBeam_B'>
+        <ShaderSingleBeam
+          rotation={[THREE.MathUtils.degToRad(-6), 0, 2.5]}
+          seedOffset={100}
+        />
+      </e.mesh>
+
+      <e.mesh theatreKey='ShaderSingleBeam_C'>
+        <ShaderSingleBeam seedOffset={100} />
+      </e.mesh>
+
+
     </group>
   )
 }

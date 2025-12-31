@@ -1,4 +1,5 @@
-// CameraRig.jsx — SINGLE CAMERA CONTROLLER (HELIX ONLY + LEVA)
+// src/components/CameraRig.jsx
+// SINGLE CAMERA CONTROLLER (HELIX + FIXED TRANSITION A→HELIX)
 
 import React, { useRef, useEffect } from 'react'
 import * as THREE from 'three'
@@ -9,52 +10,41 @@ import { useControls } from 'leva'
 import Briks from './Briks'
 import HelixLine from './HelixLine'
 
-/* =========================================================
-   DEVICE / LEVA FLAGS
-   ========================================================= */
+/* ================= DEVICE / LEVA ================= */
 const isMobile =
   typeof window !== 'undefined' &&
   /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
 
 const ENABLE_LEVA = !isMobile && process.env.NODE_ENV !== 'production'
 
-/* =========================================================
-   HELIX TUNING
-   ========================================================= */
+/* ================= HELIX TUNING ================= */
 const HELIX_DAMPING_DESKTOP = 3
 const HELIX_DAMPING_MOBILE = 6
-
 const HELIX_ROT_X_START = 20
 const HELIX_ROT_X_END = 40
-
 const MAX_CURSOR_YAW = THREE.MathUtils.degToRad(3)
 const MAX_CURSOR_PITCH = THREE.MathUtils.degToRad(2)
 
-/* =========================================================
-   DEFAULT CONTROLS (LEVA SOURCE OF TRUTH)
-   ========================================================= */
+/* ================= TRANSITION ================= */
+const TRANSITION_TIME = 0.2 // seconds
+
+/* ================= DEFAULT CONTROLS ================= */
 const CAMERA_DEFAULTS = {
   camOffsetX: -2,
   camOffsetY: 2.5,
   camOffsetZ: -3,
-
   camRotDegY: -16,
   camRotDegZ: -10,
-
   tightFollowToggle: false,
   lookAhead: 2,
-
   showLine: true,
   lineColor: '#00ffea',
   lineRadius: 0.04,
-
   showBriks: true,
   briksScale: 1
 }
 
-/* =========================================================
-   HELIX HELPERS
-   ========================================================= */
+/* ================= HELIX HELPERS ================= */
 function makeHelixPoints({ turns = 0.95, height = 40, radius = 45, points = 2000 }) {
   const arr = []
   for (let i = 0; i <= points; i++) {
@@ -102,9 +92,7 @@ function mapArcToU(lut, arcNorm) {
   return u0 + (u1 - u0) * t
 }
 
-/* =========================================================
-   CAMERA RIG
-   ========================================================= */
+/* ================= CAMERA RIG ================= */
 export default function CameraRig({
   initialHelixConfig = { turns: 0.75, height: 25, radius: 20, points: 1500 },
   lutSamples = 1000
@@ -113,10 +101,8 @@ export default function CameraRig({
   const registry = useRegistry()
 
   const camState = useSelector(s => s.camera)
-  const timelineOverall = useSelector(s => s.timeline.overallProgress)
-  const durations = useSelector(s => s.timeline.durations)
+  const timeline = useSelector(s => s.timeline)
 
-  /* ---------- LEVA CONTROLS ---------- */
   const controls = ENABLE_LEVA
     ? useControls('Camera · Helix', CAMERA_DEFAULTS)
     : CAMERA_DEFAULTS
@@ -129,23 +115,22 @@ export default function CameraRig({
     showBriks, briksScale
   } = controls
 
-  const curveRef = useRef()
-  const lutRef = useRef()
+  const curveRef = useRef(null)
+  const lutRef = useRef(null)
   const ptsRef = useRef([])
   const bricksPtsRef = useRef([])
 
-  /* ---------- REGISTER SINGLE CAMERA ---------- */
+  /* ---------- register camera ---------- */
   useEffect(() => {
     registry.setCameraRef({ camera })
-
     const pts = makeHelixPoints(initialHelixConfig)
     ptsRef.current = pts
     bricksPtsRef.current = pts.map(p => p.clone())
     curveRef.current = new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.5)
     lutRef.current = buildArcLengthLUT(curveRef.current, lutSamples)
-  }, [registry, camera])
+  }, [registry, camera, initialHelixConfig, lutSamples])
 
-  /* ---------- CURSOR ROTATION ---------- */
+  /* ---------- cursor rotation ---------- */
   const mouse = useRef({ x: 0, y: 0 })
   const cursorQuatSmooth = useRef(new THREE.Quaternion())
 
@@ -162,6 +147,9 @@ export default function CameraRig({
   const desiredPos = useRef(new THREE.Vector3())
   const desiredQuat = useRef(new THREE.Quaternion())
 
+  const transitionFrom = useRef(null)
+  const transitionTo = useRef(null)
+
   const overallToHelixLocal = (overall, d) => {
     const total = d.theatreA + d.helix + d.theatreB
     const tA = d.theatreA / total
@@ -171,15 +159,64 @@ export default function CameraRig({
     return (overall - tA) / tH
   }
 
-  /* ---------- FRAME LOOP ---------- */
   useFrame((_, dt) => {
+    /* ---------- fixed transition A → Helix ---------- */
+    if (timeline.phase === 'transition_A_TO_HELIX') {
+      if (!curveRef.current) return
+
+      if (!transitionFrom.current) {
+        transitionFrom.current = {
+          pos: camera.position.clone(),
+          quat: camera.quaternion.clone()
+        }
+
+        const u0 = 0
+        const p0 = curveRef.current.getPoint(u0)
+        const tan = curveRef.current.getTangent(u0).normalize()
+        const up = new THREE.Vector3(0, 1, 0)
+        const lookTarget = p0.clone().addScaledVector(tan, 2)
+
+        const m = new THREE.Matrix4().lookAt(
+          p0.clone().add(new THREE.Vector3(0, 2, -4)),
+          lookTarget,
+          up
+        )
+
+        transitionTo.current = {
+          pos: p0.clone(),
+          quat: new THREE.Quaternion().setFromRotationMatrix(m)
+        }
+      }
+
+      const t =
+        (performance.now() - timeline.transitionStartedAt) /
+        (TRANSITION_TIME * 1000)
+
+      const a = THREE.MathUtils.clamp(t, 0, 1)
+      camera.position.lerpVectors(
+        transitionFrom.current.pos,
+        transitionTo.current.pos,
+        a
+      )
+      camera.quaternion.slerpQuaternions(
+        transitionFrom.current.quat,
+        transitionTo.current.quat,
+        a
+      )
+      camera.updateMatrixWorld()
+      return
+    }
+
+    transitionFrom.current = null
+    transitionTo.current = null
+
+    /* ---------- helix follow ---------- */
     if (camState.mode !== 'helix') return
-    if (camState.locked || window.__INTRO_PLAYING__) return
-    if (!curveRef.current || !lutRef.current) return
+    if (camState.locked || !curveRef.current || !lutRef.current) return
 
     let arcNorm =
       camState.progress ??
-      overallToHelixLocal(timelineOverall, durations)
+      overallToHelixLocal(timeline.overallProgress, timeline.durations)
 
     arcNorm = THREE.MathUtils.clamp(arcNorm, 0, 1)
 
@@ -227,13 +264,8 @@ export default function CameraRig({
       .multiply(qExtra)
       .multiply(cursorQuatSmooth.current)
 
-    const damping = isMobile
-      ? HELIX_DAMPING_MOBILE
-      : HELIX_DAMPING_DESKTOP
-
-    const alpha = tightFollowToggle
-      ? 1
-      : (1 - Math.exp(-damping * dt))
+    const damping = isMobile ? HELIX_DAMPING_MOBILE : HELIX_DAMPING_DESKTOP
+    const alpha = tightFollowToggle ? 1 : (1 - Math.exp(-damping * dt))
 
     camera.position.lerp(desiredPos.current, alpha)
     camera.quaternion.slerp(desiredQuat.current, alpha)

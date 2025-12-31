@@ -11,7 +11,10 @@ import Enveremnt from './Enveremnt.jsx'
 import theatreStateDesktop from './assets/theatreState.json'
 import theatreStateMobile from './assets/theatreState.mobile.json'
 import { store } from './store/store'
-import { RegistryProvider, useRegistry } from './registry/TimelineRegistryContext'
+import {
+  RegistryProvider,
+  useRegistry
+} from './registry/TimelineRegistryContext'
 import CameraRig from './components/CameraRig'
 import ScrollMapper from './components/ScrollMapper'
 import DebugScrubber from './components/DebugScrubber'
@@ -35,21 +38,17 @@ const ENABLE_LEVA = !isMobile && process.env.NODE_ENV !== 'production'
 const ENABLE_STUDIO = process.env.NODE_ENV !== 'production'
 
 /* =========================================================
-   THEATRE PROJECT — FINAL DEVICE-ISOLATED SETUP
+   THEATRE PROJECT — DEVICE ISOLATED
    ========================================================= */
 if (typeof window !== 'undefined') {
-  const deviceState = isMobile
-    ? theatreStateMobile
-    : theatreStateDesktop
+  const deviceState = isMobile ? theatreStateMobile : theatreStateDesktop
 
-  const projectKey = isMobile
-    ? 'myProject-mobile'
-    : 'myProject-desktop'
+  const projectKey = isMobile ? 'myProject-mobile' : 'myProject-desktop'
 
   const stateToLoad =
     process.env.NODE_ENV === 'production'
       ? deviceState
-      : (window.__THEATRE_REMOTE_STATE__ || deviceState)
+      : window.__THEATRE_REMOTE_STATE__ || deviceState
 
   const project = getProject(projectKey, { state: stateToLoad })
   const sheet = project.sheet('Scene')
@@ -59,9 +58,9 @@ if (typeof window !== 'undefined') {
 }
 
 /* =========================================================
-   SHEET PROVIDER
+   SHEET PROVIDER (SAFE REBIND)
    ========================================================= */
-function SheetBinder({ children }) {
+function SheetBinder ({ children }) {
   const [sheet, setSheet] = useState(() => window.__THEATRE_SHEET__ || null)
 
   useEffect(() => {
@@ -80,7 +79,7 @@ function SheetBinder({ children }) {
 /* =========================================================
    TIMELINE BOOTSTRAP
    ========================================================= */
-function TimelineBootstrap() {
+function TimelineBootstrap () {
   const registry = useRegistry()
 
   useEffect(() => {
@@ -93,39 +92,55 @@ function TimelineBootstrap() {
 }
 
 /* =========================================================
+   SCENE (ALL 3D LIVES HERE)
+   ========================================================= */
+function Scene () {
+  return (
+    <>
+      <TheatrePerspectiveCamera
+        theatreKey='Camera'
+        makeDefault
+        fov={50}
+        near={0.1}
+        far={6000}
+      />
+
+      <CameraRig />
+      <WaterScene />
+
+      <Suspense fallback={null}>
+        <Enveremnt />
+      </Suspense>
+    </>
+  )
+}
+
+/* =========================================================
    MAIN APP
    ========================================================= */
-export default function App() {
-
+export default function App () {
+  /* ---- mobile URL bar fix ---- */
   useEffect(() => {
-  // 1️⃣ fake scroll to hide URL bar
-  window.scrollTo(0, 1)
+    window.scrollTo(0, 1)
 
-  // 2️⃣ sync real visible height
-  const setVH = () => {
-    const h = window.visualViewport
-      ? window.visualViewport.height
-      : window.innerHeight
+    const setVH = () => {
+      const h = window.visualViewport
+        ? window.visualViewport.height
+        : window.innerHeight
+      document.documentElement.style.setProperty('--app-height', `${h}px`)
+    }
 
-    document.documentElement.style.setProperty(
-      '--app-height',
-      `${h}px`
-    )
-  }
+    setVH()
+    window.visualViewport?.addEventListener('resize', setVH)
+    window.addEventListener('orientationchange', setVH)
 
-  setVH()
+    return () => {
+      window.visualViewport?.removeEventListener('resize', setVH)
+      window.removeEventListener('orientationchange', setVH)
+    }
+  }, [])
 
-  window.visualViewport?.addEventListener('resize', setVH)
-  window.addEventListener('orientationchange', setVH)
-
-  return () => {
-    window.visualViewport?.removeEventListener('resize', setVH)
-    window.removeEventListener('orientationchange', setVH)
-  }
-}, [])
-
-
-
+  /* ---- disable browser scroll restore ---- */
   useEffect(() => {
     if ('scrollRestoration' in window.history) {
       window.history.scrollRestoration = 'manual'
@@ -136,8 +151,11 @@ export default function App() {
   return (
     <Provider store={store}>
       <RegistryProvider>
+        {/* ================= GLOBAL UI LAYERS ================= */}
 
-        {/* LEVA (desktop only) */}
+        {/* ✅ FADE MUST BE ABOVE CANVAS */}
+        <TimelineWhiteFade triggerAtSec={300} fadeDuration={1.2} />
+
         {ENABLE_LEVA && (
           <Leva
             collapsed={false}
@@ -149,38 +167,30 @@ export default function App() {
         {ENABLE_STUDIO && <StudioManager />}
 
         <TimelineBootstrap />
-        <ScrollMapper pxPerSec={5} />
+        <ScrollMapper pxPerSec={isMobile ? 2 : 3} />
 
-        <TimelineWhiteFade triggerAtSec={270} fadeDuration={1.5} />
-
+        {/* ================= ENV GATE ================= */}
         <EnvironmentGateProvider>
           <LoaderOverlay />
           <GsapOverlay />
 
-          <Canvas style={{ position: 'fixed', inset: 0 }}>
+          {/* ================= CANVAS ================= */}
+          <Canvas
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 0 // 🔥 REQUIRED FOR FADE VISIBILITY
+            }}
+            gl={{ antialias: true }}
+            dpr={[1, 2]}
+          >
             <SheetBinder>
-
-              <TheatrePerspectiveCamera
-                theatreKey="Camera"
-                makeDefault
-                fov={50}
-                near={0.1}
-                far={6000}
-              />
-
-              <CameraRig />
-              <WaterScene />
-
-              <Suspense fallback={null}>
-                <Enveremnt />
-              </Suspense>
-
+              <Scene />
             </SheetBinder>
           </Canvas>
         </EnvironmentGateProvider>
 
         {!isMobile && <DebugScrubber />}
-
       </RegistryProvider>
     </Provider>
   )

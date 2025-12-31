@@ -1,6 +1,9 @@
-// src/store/listeners.js
 import { createListenerMiddleware } from '@reduxjs/toolkit'
-import { setPhase, setOverallProgress } from './slices/timelineSlice'
+import {
+  setPhase,
+  setOverallProgress,
+  setTransitionStart
+} from './slices/timelineSlice'
 import {
   setMode,
   setProgress,
@@ -9,8 +12,8 @@ import {
   setLastCommand
 } from './slices/cameraSlice'
 
-const THEATRE_A_SCROLL_SPEED = 1
 const END_EPS = 0.999
+const TRANSITION_TIME = 0.2 // 🔥 FIXED TIME
 
 export const listenerMiddleware = createListenerMiddleware()
 
@@ -37,11 +40,9 @@ listenerMiddleware.startListening({
 
     /* ================= THEATRE A ================= */
     if (p <= tA) {
-      // 🔁 back scroll reset
       if (!forward) autoAdvancedA = false
 
-      let local = p / tA
-      local = Math.min(1, local * THEATRE_A_SCROLL_SPEED)
+      const local = Math.min(1, p / tA)
 
       if (prevPhase !== 'theatreA') {
         api.dispatch(setPhase('theatreA'))
@@ -52,11 +53,31 @@ listenerMiddleware.startListening({
 
       registry?.seekTimelineNormalized('theatreA', local)
 
-      // 🔥 forward only auto jump
       if (forward && local >= END_EPS && !autoAdvancedA) {
         autoAdvancedA = true
+        api.dispatch(setPhase('transition_A_TO_HELIX'))
+        api.dispatch(setTransitionStart(performance.now()))
+        window.dispatchEvent(new Event('CAMERA_PATH_TRANSITION_START'))
+
+        api.dispatch(lockCamera())
+        prevPhase = 'transition_A_TO_HELIX'
         return
       }
+    }
+
+    /* ================= TRANSITION ================= */
+    else if (state.timeline.phase === 'transition_A_TO_HELIX') {
+      const t0 = state.timeline.transitionStartedAt
+      if (!t0) return
+
+      const elapsed = (performance.now() - t0) / 1000
+      if (elapsed >= TRANSITION_TIME) {
+        api.dispatch(setPhase('helix'))
+        api.dispatch(unlockCamera())
+        api.dispatch(setMode('helix'))
+        prevPhase = 'helix'
+      }
+      return
     }
 
     /* ================= HELIX ================= */

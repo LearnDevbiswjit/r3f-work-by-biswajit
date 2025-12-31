@@ -14,13 +14,13 @@ import { useVideoTexture } from '@react-three/drei'
  */
 export default function CausticsLightProjector({
   src,
-  height = 500,
+  height = 5000,
   target = [0, 0, 0],
 
   // If angleDeg is given, we use it directly.
   // Otherwise we compute from radius+height or from fitRect.
   angleDeg,
-  radius = 10000,
+  radius = 5000,
 
   // Pattern controls (tile can still be forced; otherwise auto from worldCell)
   tile = 1,

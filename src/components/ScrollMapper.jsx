@@ -13,7 +13,7 @@ import { setOverallProgress } from '../store/slices/timelineSlice'
 export default function ScrollMapper({
   pxPerSec = 3,
   smoothing = 0.25,
-  theatreBMultiplier = 3 // 🔥 DOUBLE scroll for TheatreB
+  theatreBMultiplier = 4 // 🔥 DOUBLE scroll for TheatreB
 }) {
   const dispatch = useDispatch()
   const durations = useSelector(s => s.timeline.durations)
