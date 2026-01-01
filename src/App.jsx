@@ -4,7 +4,7 @@ import { Provider } from 'react-redux'
 import { Canvas } from '@react-three/fiber'
 import { SheetProvider } from '@theatre/r3f'
 import { PerspectiveCamera as TheatrePerspectiveCamera } from '@theatre/r3f'
-import { getProject } from '@theatre/core'
+import { getProject } from '@theatre/core' 
 import { Leva } from 'leva'
 
 import Enveremnt from './Enveremnt.jsx'
@@ -26,6 +26,7 @@ import GsapOverlay from './GsapOverlay.jsx'
 import TimelineWhiteFade from './components/TimelineWhiteFade'
 import { EnvironmentGateProvider } from './loader/EnvironmentGate.jsx'
 import LoaderOverlay from './components/LoaderOverlay.jsx'
+
 
 /* =========================================================
    DEVICE CHECK
@@ -184,6 +185,7 @@ export default function App () {
             gl={{ antialias: true }}
             dpr={[1, 2]}
           >
+
             <SheetBinder>
               <Scene />
             </SheetBinder>

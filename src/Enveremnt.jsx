@@ -32,6 +32,7 @@ import sandUrl from '../src/assets/sand.jpg?url'
 import videoUrl from '../src/assets/caustics.mp4?url'
 import UnderRoundMaountain from './component/underwater/UnderRoundMaountain'
 import CausticsLightProjector from './component/underwater/caustics/CausticsLightProjector'
+import CustomHelixPathDebug from './CustomHelixPathDebug'
 export default function Enveremnt () {
   const { reportReady } = useEnvironmentGate()
   const { gl, scene, camera } = useThree()
@@ -274,6 +275,12 @@ export default function Enveremnt () {
       <e.mesh theatreKey='ShaderSingleBeam_C'>
         <ShaderSingleBeam seedOffset={100} />
       </e.mesh>
+
+
+ <e.group theatreKey='Custom-Helix-Path'>
+        <CustomHelixPathDebug scale={10} />
+      </e.group >
+
 
 
     </group>
