@@ -1,5 +1,5 @@
 // src/Enveremnt.jsx
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef,useMemo,useState } from 'react'
 import * as THREE from 'three'
 import { editable as e } from '@theatre/r3f'
 import { Float } from '@react-three/drei'
@@ -25,7 +25,8 @@ import UnderwaterFog from './component/underwater/UnderwaterFog'
 import { UnderWaterMountainSide } from './component/underwater/UnderWaterMountainSide'
 import CloudFloating from './component/CloudFloating'
 import TextBoxUnderWater from './component/underwater/TextBoxUnderWater'
-import RockStone from './rock/RockStone'
+// import RockStone from './rock/RockStone'
+  import { RockStoneLite } from './rock/RockStoneLite'
 import ShaderSingleBeam from './component/underwater/ShaderSingleBeam'
 
 import sandUrl from '../src/assets/sand.jpg?url'
@@ -33,10 +34,36 @@ import videoUrl from '../src/assets/caustics.mp4?url'
 import UnderRoundMaountain from './component/underwater/UnderRoundMaountain'
 import CausticsLightProjector from './component/underwater/caustics/CausticsLightProjector'
 import CustomHelixPathDebug from './CustomHelixPathDebug'
-export default function Enveremnt () {
+import TextWheel from './ui/TextWheel'
+
+export default function Enveremnt ({
+  rockTexture,
+  onRockClick
+}) {
   const { reportReady } = useEnvironmentGate()
   const { gl, scene, camera } = useThree()
   const frameOnce = useRef(false)
+
+  /* ================== FIXED PART ================== */
+  // cursorY → REF (NO STATE → NO RE-RENDER)
+  const cursorYRef = useRef(0)
+
+  const texts = useMemo(
+    () => "ThreeJS * GLSL * Redux * ".repeat(4).split(" "),
+    []
+  )
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      cursorYRef.current =
+        (e.clientY / window.innerHeight) * 2 - 1
+    }
+
+    window.addEventListener('mousemove', handleMouseMove)
+    return () => window.removeEventListener('mousemove', handleMouseMove)
+  }, [])
+
+
 
   // ----- MANUAL ASSET: VIDEO (deterministic) -----
   useEffect(() => {
@@ -88,7 +115,7 @@ export default function Enveremnt () {
           zSpread={250}
           color1='#8d8093'
           color2='#ffffff'
-          speed={2.0}
+          speed={3.0}
         />
       </e.group>
 
@@ -135,7 +162,7 @@ export default function Enveremnt () {
       </e.group>
       <e.group theatreKey='L1stone'>
         <Float speed={2}>
-          <L1stone scale={10} />
+          <L1stone scale={1} />
         </Float>
       </e.group>
 
@@ -169,9 +196,13 @@ export default function Enveremnt () {
         <ImagePlane url='./sky.png' position={[0, 0, -5]} />
       </e.group>
 
-      <e.group theatreKey='RockStone'>
-        <RockStone scale={15} />
-      </e.group>
+    <e.group theatreKey='RockStone'>
+  <RockStoneLite
+    scale={12}
+    textureUrl={rockTexture}
+    onClick={onRockClick}
+  />
+</e.group> 
 
       <e.group theatreKey='ProductShowcase'>
         <Product scale={40} />
@@ -277,12 +308,18 @@ export default function Enveremnt () {
       </e.mesh>
 
 
- <e.group theatreKey='Custom-Helix-Path'>
-        <CustomHelixPathDebug scale={10} />
+       <e.group theatreKey='Custom-Helix-Path'>
+        <CustomHelixPathDebug scale={1} />
       </e.group >
 
 
-
+<e.group theatreKey='text-wheel'>
+        <TextWheel scale={25}
+          texts={texts}
+          cursorYRef={cursorYRef}
+          position={[0, -5.5, 0]}
+        />
+      </e.group>
     </group>
   )
 }

@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---------------- Google Fonts ---------------- */
+@import url('https://fonts.googleapis.com/css2?family=Orelega+One&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Aladin&display=swap');
+
+/* ---------------- Local Font ---------------- */
+@font-face {
+  font-family: 'Aladin';
+  src: url('/fonts/Aladin-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Anton';
+  src: url('/fonts/Anton-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+/* ---------------- Base ---------------- */
+ 
+
+/* ---------------- Utilities ---------------- */
+@layer utilities {
+  /* GSAP ScrollSmoother */
+  #smooth-wrapper {
+    position: relative;
+
+    /* ✅ IMPORTANT FIX */
+    height: 100dvh;
+    min-height: 100dvh;
+
+    width: 100%;
+    overflow: hidden;
+    background: #000;
+  }
+
+  #smooth-content {
+    min-height: 100dvh;
+    width: 100%;
+    background: #000;
+  }
+
+  .leva-ui {
+    z-index: 99999 !important;
+  }
+
+  /* Prevent mobile bottom white flash */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: #000;
+    z-index: -1;
+  }
+
+  /* Safe-area (Android + iOS) */
+  @supports (padding: env(safe-area-inset-bottom)) {
+    body {
+      padding-bottom: env(safe-area-inset-bottom);
+      background: #000;
+    }
+  }
+
+  /* Responsive text */
+  @media (max-width: 768px) {
+    .section-0 .headline,
+    .section-1 .headline,
+    .section-2 .headline,
+    .section-3 .headline {
+      font-size: clamp(2rem, 8vw, 3.5rem);
+    }
+  }
+}

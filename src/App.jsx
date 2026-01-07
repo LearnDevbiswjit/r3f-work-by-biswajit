@@ -4,7 +4,7 @@ import { Provider } from 'react-redux'
 import { Canvas } from '@react-three/fiber'
 import { SheetProvider } from '@theatre/r3f'
 import { PerspectiveCamera as TheatrePerspectiveCamera } from '@theatre/r3f'
-import { getProject } from '@theatre/core' 
+import { getProject } from '@theatre/core'
 import { Leva } from 'leva'
 
 import Enveremnt from './Enveremnt.jsx'
@@ -26,11 +26,11 @@ import GsapOverlay from './GsapOverlay.jsx'
 import TimelineWhiteFade from './components/TimelineWhiteFade'
 import { EnvironmentGateProvider } from './loader/EnvironmentGate.jsx'
 import LoaderOverlay from './components/LoaderOverlay.jsx'
-
+import RockTextureUI from './ui/RockTextureUI'
 
 /* =========================================================
    DEVICE CHECK
-   ========================================================= */
+========================================================= */
 const isMobile =
   typeof window !== 'undefined' &&
   /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
@@ -39,11 +39,10 @@ const ENABLE_LEVA = !isMobile && process.env.NODE_ENV !== 'production'
 const ENABLE_STUDIO = process.env.NODE_ENV !== 'production'
 
 /* =========================================================
-   THEATRE PROJECT — DEVICE ISOLATED
-   ========================================================= */
+   THEATRE PROJECT
+========================================================= */
 if (typeof window !== 'undefined') {
   const deviceState = isMobile ? theatreStateMobile : theatreStateDesktop
-
   const projectKey = isMobile ? 'myProject-mobile' : 'myProject-desktop'
 
   const stateToLoad =
@@ -59,9 +58,9 @@ if (typeof window !== 'undefined') {
 }
 
 /* =========================================================
-   SHEET PROVIDER (SAFE REBIND)
-   ========================================================= */
-function SheetBinder ({ children }) {
+   SHEET PROVIDER
+========================================================= */
+function SheetBinder({ children }) {
   const [sheet, setSheet] = useState(() => window.__THEATRE_SHEET__ || null)
 
   useEffect(() => {
@@ -79,8 +78,8 @@ function SheetBinder ({ children }) {
 
 /* =========================================================
    TIMELINE BOOTSTRAP
-   ========================================================= */
-function TimelineBootstrap () {
+========================================================= */
+function TimelineBootstrap() {
   const registry = useRegistry()
 
   useEffect(() => {
@@ -93,9 +92,9 @@ function TimelineBootstrap () {
 }
 
 /* =========================================================
-   SCENE (ALL 3D LIVES HERE)
-   ========================================================= */
-function Scene () {
+   SCENE
+========================================================= */
+function Scene({ rockTexture, onRockClick }) {
   return (
     <>
       <TheatrePerspectiveCamera
@@ -110,7 +109,10 @@ function Scene () {
       <WaterScene />
 
       <Suspense fallback={null}>
-        <Enveremnt />
+        <Enveremnt
+          rockTexture={rockTexture}
+          onRockClick={onRockClick}
+        />
       </Suspense>
     </>
   )
@@ -118,79 +120,56 @@ function Scene () {
 
 /* =========================================================
    MAIN APP
-   ========================================================= */
-export default function App () {
+========================================================= */
+export default function App() {
+  // ✅ GLOBAL STATE (IMPORTANT)
+  const [rockTexture, setRockTexture] = useState('/textures/rock-1.jpg')
+  const [showRockUI, setShowRockUI] = useState(false)
+
   /* ---- mobile URL bar fix ---- */
   useEffect(() => {
     window.scrollTo(0, 1)
-
-    const setVH = () => {
-      const h = window.visualViewport
-        ? window.visualViewport.height
-        : window.innerHeight
-      document.documentElement.style.setProperty('--app-height', `${h}px`)
-    }
-
-    setVH()
-    window.visualViewport?.addEventListener('resize', setVH)
-    window.addEventListener('orientationchange', setVH)
-
-    return () => {
-      window.visualViewport?.removeEventListener('resize', setVH)
-      window.removeEventListener('orientationchange', setVH)
-    }
-  }, [])
-
-  /* ---- disable browser scroll restore ---- */
-  useEffect(() => {
-    if ('scrollRestoration' in window.history) {
-      window.history.scrollRestoration = 'manual'
-    }
-    window.scrollTo(0, 0)
   }, [])
 
   return (
     <Provider store={store}>
       <RegistryProvider>
-        {/* ================= GLOBAL UI LAYERS ================= */}
 
-        {/* ✅ FADE MUST BE ABOVE CANVAS */}
         <TimelineWhiteFade triggerAtSec={300} fadeDuration={1.2} />
 
-        {ENABLE_LEVA && (
-          <Leva
-            collapsed={false}
-            oneLineLabels
-            theme={{ sizes: { rootWidth: '340px' } }}
-          />
-        )}
-
+        {ENABLE_LEVA && <Leva collapsed={false} />}
         {ENABLE_STUDIO && <StudioManager />}
 
         <TimelineBootstrap />
         <ScrollMapper pxPerSec={isMobile ? 2 : 3} />
 
-        {/* ================= ENV GATE ================= */}
         <EnvironmentGateProvider>
           <LoaderOverlay />
           <GsapOverlay />
 
-          {/* ================= CANVAS ================= */}
           <Canvas
-            style={{
-              position: 'fixed',
-              inset: 0,
-              zIndex: 0 // 🔥 REQUIRED FOR FADE VISIBILITY
-            }}
+            style={{ position: 'fixed', inset: 0, zIndex: 0 }}
             gl={{ antialias: true }}
             dpr={[1, 2]}
           >
-
             <SheetBinder>
-              <Scene />
+              <Scene
+                rockTexture={rockTexture}
+                onRockClick={() => setShowRockUI(true)}
+              />
             </SheetBinder>
           </Canvas>
         </EnvironmentGateProvider>
+
+        {/* ✅ UI OVERLAY (Canvas-এর বাইরে) */}
+        {showRockUI && (
+          <RockTextureUI
+            onSelect={(tex) => {
+              setRockTexture(tex)
+              setShowRockUI(false)
+            }}
+          />
+        )}
 
         {!isMobile && <DebugScrubber />}
       </RegistryProvider>

@@ -1,5 +1,6 @@
 // src/components/CameraRig.jsx
 // SINGLE CAMERA CONTROLLER (HELIX + FIXED TRANSITION A→HELIX)
+// UPDATED: Leva now has X/Y/Z for POSITION OFFSET, OFFSET, and ROTATION (X/Y/Z)
 
 import React, { useRef, useEffect } from 'react'
 import * as THREE from 'three'
@@ -30,16 +31,28 @@ const TRANSITION_TIME = 0.2 // seconds
 
 /* ================= DEFAULT CONTROLS ================= */
 const CAMERA_DEFAULTS = {
-  camOffsetX: -2,
-  camOffsetY: 2.5,
+  // WORLD POSITION OFFSET (absolute)
+  posX: 0,
+  posY: 0,
+  posZ: 0,
+
+  // PATH RELATIVE OFFSET
+  camOffsetX: -0.6,
+  camOffsetY: 3.12,
   camOffsetZ: -3,
-  camRotDegY: -16,
-  camRotDegZ: -10,
+
+  // ROTATION (X/Y/Z)
+  camRotDegX: 0,
+  camRotDegY: -6.8,
+  camRotDegZ: -6,
+
   tightFollowToggle: false,
   lookAhead: 2,
+
   showLine: true,
   lineColor: '#00ffea',
   lineRadius: 0.04,
+
   showBriks: true,
   briksScale: 1
 }
@@ -108,8 +121,9 @@ export default function CameraRig({
     : CAMERA_DEFAULTS
 
   const {
+    posX, posY, posZ,
     camOffsetX, camOffsetY, camOffsetZ,
-    camRotDegY, camRotDegZ,
+    camRotDegX, camRotDegY, camRotDegZ,
     tightFollowToggle, lookAhead,
     showLine, lineColor, lineRadius,
     showBriks, briksScale
@@ -220,7 +234,7 @@ export default function CameraRig({
 
     arcNorm = THREE.MathUtils.clamp(arcNorm, 0, 1)
 
-    const camRotDegX = THREE.MathUtils.lerp(
+    const camRotDegXAuto = THREE.MathUtils.lerp(
       HELIX_ROT_X_START,
       HELIX_ROT_X_END,
       arcNorm
@@ -237,6 +251,7 @@ export default function CameraRig({
       .addScaledVector(right, camOffsetX)
       .addScaledVector(upLocal, camOffsetY)
       .addScaledVector(tan, camOffsetZ)
+      .add(new THREE.Vector3(posX, posY, posZ)) // WORLD POSITION OFFSET
 
     const lookTarget = p.clone().addScaledVector(tan, lookAhead)
     const m = new THREE.Matrix4().lookAt(desiredPos.current, lookTarget, up)
@@ -244,7 +259,7 @@ export default function CameraRig({
 
     const qExtra = new THREE.Quaternion().setFromEuler(
       new THREE.Euler(
-        THREE.MathUtils.degToRad(camRotDegX),
+        THREE.MathUtils.degToRad(camRotDegXAuto + camRotDegX),
         THREE.MathUtils.degToRad(camRotDegY),
         THREE.MathUtils.degToRad(camRotDegZ),
         'YXZ'
@@ -288,7 +303,7 @@ export default function CameraRig({
           count={20}
           stepInterval={1}
           brick={{ width: 2.6, height: 0.28, depth: 1.0 }}
-          pathColor={'#ff7a66'}
+         
           proximityRadius={8}
           riseAmount={1.6}
           startLower={1.6}
