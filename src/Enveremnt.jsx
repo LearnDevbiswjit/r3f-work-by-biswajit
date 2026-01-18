@@ -15,7 +15,7 @@ import { ConchShell } from './ConchShell'
 import ImageSmall from './ImageSmall'
 import { R1stone } from './rock/R1stone'
 import { L1stone } from './rock/L1stone'
-import { L2stone } from './rock/L2stone'
+import { L2stone } from './rock/L2stone' 
 import { L3stone } from './rock/L3stone'
 import { Pillarstone } from './rock/Pillarstone'
 import ImagePlane from './ImagePlane'
@@ -33,7 +33,7 @@ import sandUrl from '../src/assets/sand.jpg?url'
 import videoUrl from '../src/assets/caustics.mp4?url'
 import UnderRoundMaountain from './component/underwater/UnderRoundMaountain'
 import CausticsLightProjector from './component/underwater/caustics/CausticsLightProjector'
-import CustomHelixPathDebug from './CustomHelixPathDebug'
+// import CustomHelixPathDebug from './CustomHelixPathDebug'
 import TextWheel from './ui/TextWheel'
 
 export default function Enveremnt ({
@@ -308,9 +308,9 @@ export default function Enveremnt ({
       </e.mesh>
 
 
-       <e.group theatreKey='Custom-Helix-Path'>
+       {/* <e.group theatreKey='Custom-Helix-Path'>
         <CustomHelixPathDebug scale={1} />
-      </e.group >
+      </e.group > */}
 
 
 <e.group theatreKey='text-wheel'>
@@ -320,6 +320,88 @@ export default function Enveremnt ({
           position={[0, -5.5, 0]}
         />
       </e.group>
+
+
+         {/* <e.group theatreKey='TextBoxUnderWater-1' position={[0, 0, 1]}>
+        <TextBoxUnderWater
+          startAt={112}  
+          duration={4}  
+          scrollTimelineLength={145}
+          title='Skin Health'
+          bullets={[
+            'Anti-aging, collagen production, reduces acne, hydrates skin and decreases excessive sebum oil in the skin.',
+            'Helps with severe skin conditions like eczema and psoriasis.'
+          ]}
+          bubbleSrc='/textures/bubble1.png'
+          position={[0, 0.8, 0]}
+          scale={25}
+        />
+      </e.group> */}
+
+       <e.group theatreKey='TextBoxUnderWater-1' position={[0, 0, 1]}>
+              <TextBoxUnderWater
+                startAt={112} // এই কম্পোনেন্ট 30s এ শুরু করবে
+                duration={4} // 4 seconds-এর স্ক্রল পজিশনে পুরো growth হবে (0->1)
+                scrollTimelineLength={145}
+                title='Skin Health'
+                bullets={[
+                  'Anti-aging, collagen production, reduces acne, hydrates skin and decreases excessive sebum oil in the skin.',
+                  'Helps with severe skin conditions like eczema and psoriasis.'
+                ]}
+                
+                position={[0, 0.8, 0]}
+                scale={20}
+                depthTest={false}
+depthWrite={false}
+renderOrder={999}
+
+              />
+            </e.group>
+
+
+        <e.group theatreKey='TextBoxUnderWater-2' position={[0, 0, 1]}>
+              <TextBoxUnderWater
+                startAt={140} // এই কম্পোনেন্ট 30s এ শুরু করবে
+                duration={6} // 4 seconds-এর স্ক্রল পজিশনে পুরো growth হবে (0->1)
+                scrollTimelineLength={145}
+                title='Skin Health'
+                bullets={[
+                 'GPU-driven rendering pipeline: minimizing draw calls, batching geometry, and using instancing for massive performance gains.',
+                'Shader-based animations (GLSL) offload work from CPU to GPU, enabling smooth underwater effects even on mobile devices.'
+                ]}
+                bubbleSrc='/textures/bubble1.png'
+                position={[0, 0.8, 0]}
+                scale={15}
+                depthTest={false}
+depthWrite={false}
+renderOrder={999}
+
+              />
+            </e.group>
+      
+
+            <e.group theatreKey='TextBoxUnderWater-3' position={[0, 0, 1]}>
+              <TextBoxUnderWater
+                startAt={142} // এই কম্পোনেন্ট 30s এ শুরু করবে
+                duration={6} // 4 seconds-এর স্ক্রল পজিশনে পুরো growth হবে (0->1)
+                scrollTimelineLength={145}
+                title='Skin Health'
+                 bullets={[
+                  'Anti-aging, collagen production, reduces acne, hydrates skin and decreases excessive sebum oil in the skin.',
+                  'Helps with severe skin conditions like eczema and psoriasis.'
+                ]}
+                bubbleSrc='/textures/bubble1.png'
+                position={[0, 0.8, 0]}
+                scale={15}
+                depthTest={false}
+depthWrite={false}
+renderOrder={999}
+
+              />
+            </e.group>
+
+
+      
     </group>
   )
 }

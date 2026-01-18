@@ -137,6 +137,8 @@ export default function GsapOverlay() {
     "absolute inset-0 h-screen w-full  pointer-events-none px-[10vw]";
 
   return (
+    <>
+   
     <div className="z-40 fixed inset-0 pointer-events-none">
       {/* SECTION 0 */}
       <section
@@ -145,7 +147,7 @@ export default function GsapOverlay() {
       >
         <div className="max-w-[90%]">
           <h1
-            className="font-anton text-purple-300 headline"
+            className="font-anton text-white headline"
             style={{ fontSize: "clamp(40px,6vw,120px)" }}
           >
             Limitless ideas <br />
@@ -196,5 +198,6 @@ export default function GsapOverlay() {
         </h2>
       </section>
     </div>
+    </>
   );
 }

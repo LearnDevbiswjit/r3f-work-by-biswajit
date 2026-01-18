@@ -49,7 +49,7 @@ const CAMERA_DEFAULTS = {
   tightFollowToggle: false,
   lookAhead: 2,
 
-  showLine: true,
+  showLine: false,
   lineColor: '#00ffea',
   lineRadius: 0.04,
 

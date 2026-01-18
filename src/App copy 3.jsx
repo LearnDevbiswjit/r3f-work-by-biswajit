@@ -11,7 +11,10 @@ import Enveremnt from './Enveremnt.jsx'
 import theatreStateDesktop from './assets/theatreState.json'
 import theatreStateMobile from './assets/theatreState.mobile.json'
 import { store } from './store/store'
-import { RegistryProvider, useRegistry } from './registry/TimelineRegistryContext'
+import {
+  RegistryProvider,
+  useRegistry
+} from './registry/TimelineRegistryContext'
 import CameraRig from './components/CameraRig'
 import ScrollMapper from './components/ScrollMapper'
 import DebugScrubber from './components/DebugScrubber'
@@ -25,7 +28,9 @@ import { EnvironmentGateProvider } from './loader/EnvironmentGate.jsx'
 import LoaderOverlay from './components/LoaderOverlay.jsx'
 import RockTextureUI from './ui/RockTextureUI'
 
-/* ================= DEVICE ================= */    
+/* =========================================================
+   DEVICE CHECK
+========================================================= */
 const isMobile =
   typeof window !== 'undefined' &&
   /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
@@ -33,7 +38,9 @@ const isMobile =
 const ENABLE_LEVA = !isMobile && process.env.NODE_ENV !== 'production'
 const ENABLE_STUDIO = process.env.NODE_ENV !== 'production'
 
-/* ================= THEATRE ================= */
+/* =========================================================
+   THEATRE PROJECT
+========================================================= */
 if (typeof window !== 'undefined') {
   const deviceState = isMobile ? theatreStateMobile : theatreStateDesktop
   const projectKey = isMobile ? 'myProject-mobile' : 'myProject-desktop'
@@ -50,7 +57,9 @@ if (typeof window !== 'undefined') {
   window.__THEATRE_SHEET__ = sheet
 }
 
-/* ================= SHEET ================= */
+/* =========================================================
+   SHEET PROVIDER
+========================================================= */
 function SheetBinder({ children }) {
   const [sheet, setSheet] = useState(() => window.__THEATRE_SHEET__ || null)
 
@@ -67,7 +76,9 @@ function SheetBinder({ children }) {
   return <SheetProvider sheet={sheet}>{children}</SheetProvider>
 }
 
-/* ================= TIMELINE ================= */
+/* =========================================================
+   TIMELINE BOOTSTRAP
+========================================================= */
 function TimelineBootstrap() {
   const registry = useRegistry()
 
@@ -80,7 +91,9 @@ function TimelineBootstrap() {
   return null
 }
 
-/* ================= SCENE ================= */
+/* =========================================================
+   SCENE
+========================================================= */
 function Scene({ rockTexture, onRockClick }) {
   return (
     <>
@@ -91,52 +104,31 @@ function Scene({ rockTexture, onRockClick }) {
         near={0.1}
         far={6000}
       />
+
       <CameraRig />
       <WaterScene />
+
       <Suspense fallback={null}>
-        <Enveremnt rockTexture={rockTexture} onRockClick={onRockClick} />
+        <Enveremnt
+          rockTexture={rockTexture}
+          onRockClick={onRockClick}
+        />
       </Suspense>
     </>
   )
 }
 
-/* ================= APP ================= */
+/* =========================================================
+   MAIN APP
+========================================================= */
 export default function App() {
+  // ✅ GLOBAL STATE (IMPORTANT)
   const [rockTexture, setRockTexture] = useState('/textures/rock-1.jpg')
   const [showRockUI, setShowRockUI] = useState(false)
 
-  /* 🔒 HARD browser scroll terminate */
+  /* ---- mobile URL bar fix ---- */
   useEffect(() => {
-    if ('scrollRestoration' in window.history) {
-      window.history.scrollRestoration = 'manual'
-    }
-    window.scrollTo(0, 0)
-    document.documentElement.scrollTop = 0
-    document.body.scrollTop = 0
-  }, [])
-
-  /* 🔒 LOCK until loader done */
-  useEffect(() => {
-    const lock = () => {
-      document.body.style.overflow = 'hidden'
-      document.documentElement.style.overflow = 'hidden'
-      window.scrollTo(0, 0)
-    }
-
-    const unlock = () => {
-      document.body.style.overflow = ''
-      document.documentElement.style.overflow = ''
-      window.scrollTo(0, 0)
-    }
-
-    lock()
-
-    const onDone = () => unlock()
-    window.addEventListener('APP_LOADER_DONE', onDone)
-
-    return () => {
-      window.removeEventListener('APP_LOADER_DONE', onDone)
-    }
+    window.scrollTo(0, 1)
   }, [])
 
   return (
@@ -149,14 +141,13 @@ export default function App() {
         {ENABLE_STUDIO && <StudioManager />}
 
         <TimelineBootstrap />
-
-        {/* ⛔ Scroll inactive until loader done */}
         <ScrollMapper pxPerSec={isMobile ? 2 : 3} />
 
         <EnvironmentGateProvider>
           <LoaderOverlay />
           <GsapOverlay />
-   <Canvas
+
+          <Canvas
             style={{ position: 'fixed', inset: 0, zIndex: 0 }}
             gl={{ antialias: true }}
             dpr={[1, 2]}
@@ -167,9 +158,10 @@ export default function App() {
                 onRockClick={() => setShowRockUI(true)}
               />
             </SheetBinder>
-          </Canvas> 
+          </Canvas>
         </EnvironmentGateProvider>
 
+        {/* ✅ UI OVERLAY (Canvas-এর বাইরে) */}
         {showRockUI && (
           <RockTextureUI
             onSelect={(tex) => {
@@ -179,7 +171,7 @@ export default function App() {
           />
         )}
 
-        {/* {!isMobile && <DebugScrubber />} */}
+        {!isMobile && <DebugScrubber />}
       </RegistryProvider>
     </Provider>
   )

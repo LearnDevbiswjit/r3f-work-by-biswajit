@@ -41,7 +41,7 @@ export default function HelixLine({ points = [], color = '#00ffea', radius = 1.0
     </mesh>
   ) : (
     <line geometry={geom}>
-      <lineBasicMaterial color={color} linewidth={1} />
+      <lineBasicMaterial color={color} linewidth={0} />
     </line>
   );
 }

@@ -80,7 +80,7 @@ export default function WaterScene() {
   /* water */
   useEffect(() => {
     // reduce plane size on mobile to 5000, keep big on desktop
-    const PLANE_SIZE = isMobile ? 5000 : 15000
+    const PLANE_SIZE = isMobile ? 5000 : 35000
     // For mobile use lower internal render targets for water
     const TEX_SIZE = isMobile ? 256 : 512
 
@@ -198,7 +198,7 @@ export default function WaterScene() {
   return (
     <>
       {/* horizon glow */}
-      <mesh ref={bandRef} renderOrder={999} frustumCulled={false}>
+      <mesh ref={bandRef} renderOrder={99999} frustumCulled={false}>
         <planeGeometry args={[1, 1]} />
         <meshBasicMaterial
           map={bandTex}
